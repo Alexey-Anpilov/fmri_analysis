@@ -5,7 +5,7 @@ import pickle
 from yaml import safe_load
 
 
-atlas_path = '/home/aaanpilov/diploma/project/atlas/atlas_resample.nii'
+atlas_path = './atlas/atlas_resample.nii'
 
 
 def process_config(config_path):
