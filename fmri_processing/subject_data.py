@@ -33,8 +33,7 @@ class SubjectData:
 
     def cut_and_apply_function(self, window_size=10, process_func=np.max, need_average=False):
         '''
-            Для одного испытуемого нарезает данные, применяет фукнцию и склеивает данные, так
-            что их можно подать на вход модели
+            Для одного испытуемого нарезает данные -- разделяет на правду и ложь и применяет фукнцию
         '''
         truth_data, lie_data = self.cut_answers(window_size)
 
@@ -90,16 +89,10 @@ class SubjectData:
 
     def apply_func(self, truth_data, lie_data, process_func, need_average=False):
         """
-        Обрабатывает данные одного испытуемого: вычисляет усредненные максимальные значения
+        Обрабатывает данные одного испытуемого: применяет функцию 
         для правды и лжи в каждом регионе.
-
-        Параметры:
-        - truth_data: Массив формы (n_truth_trials, n_timepoints, n_regions)
-        - lie_data: Массив формы (n_lie_trials, n_timepoints, n_regions)
-
-        Возвращает:
-        - avg_truth: Усредненные максимумы для правды (132 региона)
-        - avg_lie: Усредненные максимумы для лжи (132 региона)
+        
+        need_average -- усредняя по всем вопросам правды и лжи 
         """
         # 1. Найти максимум по времени для каждого ответа и региона
         processed_truth = process_func(truth_data)    # (25, 132)

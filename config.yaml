@@ -1,3 +1,0 @@
-data_path: './data/HC/sub-02/denoised_data.nii.gz'
-events_path: './data/HC/sub-02/sub-02_timing.txt'
-tr: 1.0

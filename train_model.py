@@ -1,18 +1,11 @@
-from lib import *
-
 import numpy as np
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report, confusion_matrix
-import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report
 from sklearn.svm import NuSVC
+import pandas as pd
 
 import pickle
-from sklearn.datasets import load_iris
-from sklearn.ensemble import RandomForestClassifier
 from yaml import safe_load
 
 
@@ -158,10 +151,10 @@ def process_config(config_path):
         return data_file, events_file, tr
 
 if __name__ == '__main__':
-    average = False
+    average = True
     if average:
         matrix =  np.load(f'results/HC/area_matrix.npy')
-
+        print(matrix.shape)
         model = different_models(matrix)
     else: 
         true_matrix = np.load(f'results/HC/max_matrix_true.npy')

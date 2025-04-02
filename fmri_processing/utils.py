@@ -4,11 +4,8 @@ import numpy as np
 def process_config(config_path):
     with open(config_path) as f:
         data = safe_load(f)
-        data_file = data['data_path']
-        events_file = data['events_path']
-        tr = data['tr']
-        return data_file, events_file, tr
-
+        subjects = data['subjects']
+        return subjects
 
 # def process_events(events_file):
 #     events_data = {'onset': [], 'duration': [], 'trial_type': []}  # Создаем словарь для хранения данных
@@ -33,7 +30,7 @@ def process_config(config_path):
 
 
 # TODO просмотреть вот эту функцию 
-def print_predict_results(events, predicted_truth, predicted_lie):
+def get_predict_results_str(events, predicted_truth, predicted_lie):
     truth_array = np.column_stack((events[events['trial_type'] == 0]['onset'].values, predicted_truth, events[events['trial_type'] == 0]['trial_type'].values))
     lie_array = np.column_stack((events[events['trial_type'] == 1]['onset'].values, predicted_lie, events[events['trial_type'] == 1]['trial_type'].values))
     
@@ -41,6 +38,9 @@ def print_predict_results(events, predicted_truth, predicted_lie):
 
     sorted_array = combined_array[combined_array[:, 0].argsort()]
 
+    res = ''
     for elem in sorted_array:
         status = "содержит сокрытие информации" if elem[1] == 1 else "не содержит сокрытия информации"
-        print(f"{elem[0]} : {status} {elem[2]}")
+        res += f"{elem[0]} : {status} {elem[2]} \n"
+    
+    return res 
