@@ -47,7 +47,7 @@ sub_info_schz = {
 black_list_hc = ['sub-01', 'sub-07']
 black_list_schz = ['sub-01', 'sub-17', 'sub-16', 'sub-15']
 
-atlas_path = '/home/aaanpilov/diploma/project/atlas/atlas_resample.nii'
+atlas_path = './atlas/atlas_resample.nii'
 data_file = 'denoised_data.nii.gz'
 events_file = "time_file.csv"
 

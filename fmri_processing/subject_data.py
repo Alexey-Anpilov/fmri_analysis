@@ -35,22 +35,46 @@ class SubjectData:
         '''
             Для одного испытуемого нарезает данные -- разделяет на правду и ложь и применяет фукнцию
         '''
-        truth_data, lie_data = self.cut_answers(window_size)
+        truth_data = self.cut_answers_for_truth(window_size)
+        lie_data = self.cut_answers_for_lie(window_size)
 
-        truth_data_processed, lie_data_processed = self.apply_func(truth_data, lie_data, process_func, need_average)
+        truth_data_processed = self.apply_func(truth_data, lie_data, process_func, need_average)
+        lie_data_processed = self.apply_func(lie_data, process_func, need_average)
         
         return truth_data_processed, lie_data_processed
     
 
-    def cut_answers(self, window_size, average=False):
+    # функция для извлечения окон
+    def extract_windows_(self, onsets, window_size):
+        window_volumes = int(np.round(window_size / self.tr))
+        signals = []
+        for onset in onsets:
+            start = int(np.round(onset / self.tr))
+            end = start + window_volumes
+            if end > self.data.shape[0]:
+                print(f"Пропущен вопрос (выход за границы данных)")
+                continue
+            window_data = self.data[start:end, :]
+            # if average:
+            #     window_data = np.mean(window_data, axis=0)  # Усреднение по времени -> [регионы]
+            signals.append(window_data)
+        return np.array(signals)
+
+    
+    def cut_answers_for_truth(self, window_size):
+        truth_onsets = self.events[self.events['trial_type'] == 0]['onset'].values
+        return self.cut_answers(truth_onsets, window_size)
+
+
+    def cut_answers_for_lie(self, window_size):
+        lie_onsets = self.events[self.events['trial_type'] == 1]['onset'].values
+        return self.cut_answers(lie_onsets, window_size)
+
+
+    def cut_answers(self, onsets, window_size, average=False):
         '''
             Вырезает из данных участки с импульсами согласно файлу разбиения
         '''
-
-        # разделяем на правду и ложь
-        truth_onsets = self.events[self.events['trial_type'] == 0]['onset'].values
-        lie_onsets = self.events[self.events['trial_type'] == 1]['onset'].values
-
         # # Получаем truth_onsets (onset для trial_type == 0)
         # truth_onsets = [
         #     events['onset'][i]  # Берем onset
@@ -64,27 +88,7 @@ class SubjectData:
         #     for i in range(len(events['trial_type']))  # Итерируем по индексам
         #     if events['trial_type'][i] == 1  # Условие: trial_type == 1
         # ]
-
-        # функция для извлечения окон
-        def extract_windows(onsets):
-            window_volumes = int(np.round(window_size / self.tr))
-            signals = []
-            for onset in onsets:
-                start = int(np.round(onset / self.tr))
-                end = start + window_volumes
-                if end > self.data.shape[0]:
-                    print(f"Пропущен вопрос (выход за границы данных)")
-                    continue
-                window_data = self.data[start:end, :]
-                if average:
-                    window_data = np.mean(window_data, axis=0)  # Усреднение по времени -> [регионы]
-                signals.append(window_data)
-            return np.array(signals)
-        
-        truth_data = extract_windows(truth_onsets)
-        lie_data = extract_windows(lie_onsets)
-        
-        return truth_data, lie_data
+        return self.extract_windows_(onsets, window_size)
     
 
     def cut_for_runs(self, window_size, average=False):
@@ -111,21 +115,16 @@ class SubjectData:
         return res
 
     # TODO тут нужно принимать просто данные, а не truth и lie 
-    def apply_func(self, truth_data, lie_data, process_func, need_average=False):
+    def apply_func(self, data, process_func, need_average=False):
         """
         Обрабатывает данные одного испытуемого: применяет функцию 
         для правды и лжи в каждом регионе.
         
         need_average -- усредняя по всем вопросам правды и лжи 
         """
-        # 1. Найти максимум по времени для каждого ответа и региона
-        processed_truth = process_func(truth_data)    # (25, 132)
-        processed_lie = process_func(lie_data)    # (5, 132)
+        processed_truth = process_func(data)    # (25, 132)
 
         if need_average:
-            # 2. Усреднить максимумы по всем ответам каждого типа
-            processed_truth = np.mean(processed_truth, axis=0)  # (132,)
-            processed_lie = np.mean(processed_lie, axis=0)      # (132,)
+            processed_data = np.mean(processed_truth, axis=0)  # (132,)
 
-
-        return processed_truth, processed_lie
+        return processed_data

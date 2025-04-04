@@ -2,3 +2,5 @@ numpy
 pandas
 nilearn
 pyyaml
+seaborn
+matplotlib

@@ -7,36 +7,7 @@ import pandas as pd
 
 import pickle
 from yaml import safe_load
-
-
-
-atlas_path = '/home/aaanpilov/diploma/project/atlas/atlas_resample.nii'
-data_file = 'denoised_data.nii.gz'
-events_file = "time_file.csv"
-
-data_dir_hc = './data/HC'
-out_dir_hc = './numpy_data/HC/'
-sub_num_hc = 18
-
-data_dir_schz = './data/SCHZ/'
-out_dir_schz = './numpy_data/SCHZ/'
-sub_num_schz = 19
-
-is_hc = True
-
-if is_hc:
-    data_dir = data_dir_hc
-    out_dir = out_dir_hc
-    sub_num = sub_num_hc
-else:
-    data_dir = data_dir_schz
-    out_dir = out_dir_schz
-    sub_num = sub_num_schz
-
-tr = 1.0    # нужно будет задать правильное значение для каждого отдельного испытуемого
-window_seconds = 10
-
-
+from fmri_processing import subjects_info
 
 def different_models(matrix, labels=None):
     # 1. Загрузка данных и подготовка

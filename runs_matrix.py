@@ -1,11 +1,10 @@
-import os
 import numpy as np
 import pickle
 
 from fmri_processing import *
 from fmri_processing.subjects_info import *
 
-config_path = '/home/aaanpilov/diploma/project/config_HC.yaml'
+config_path = './config_HC.yaml'
 
 import seaborn as sns
 import matplotlib.pyplot as plt
