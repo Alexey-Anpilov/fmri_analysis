@@ -7,7 +7,7 @@ from nilearn.maskers import NiftiLabelsMasker
 class DataLoader:
     def __init__(self, atlas_path):
         self.atlas_path = atlas_path
-        self.masker = NiftiLabelsMasker(labels_img=self.atlas_path, standardize=True, verbose=1)    # подумать над вот этим параметром standartize
+        self.masker = NiftiLabelsMasker(labels_img=self.atlas_path, standardize=False, verbose=1)    # подумать над вот этим параметром standartize
 
 
     def load_data(self, data_path, npy_path=None):
@@ -64,15 +64,15 @@ class DataLoader:
     def process_events(self, file_name):
         with open('./tmp.csv', 'w') as output_file,\
             open(file_name, 'r') as input_file:
-                output_file.write('onset,duration,trial_type\n')
+                output_file.write('onset,duration,trial_type,name\n')
                 for line in input_file:
                     l = line.split()
                     if len(l) == 3:
                         continue
                     if l[3][2] == '4':
-                        output_file.write(l[1] + ',1.0,'  +  '1'   + '\n')
+                        output_file.write(l[1] + ',1.0,'  +  '1,' + l[4] + '\n')
                     else:
-                        output_file.write(l[1] + ',1.0,' + '0' + '\n')
+                        output_file.write(l[1] + ',1.0,' + '0,' + l[4] + '\n')
         events_data = pd.read_csv('./tmp.csv')
 
         return events_data

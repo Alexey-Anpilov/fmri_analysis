@@ -6,4 +6,4 @@ from .utils import *
 
 __all__ = ['DataLoader', 'SubjectData', 'calc_minimum', 
            'calc_maximum', 'calc_max_min', 'calc_auc',
-           'process_config', 'print_predict_results']
+           'process_config', 'get_predict_results_str']

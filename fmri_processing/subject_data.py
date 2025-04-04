@@ -87,6 +87,30 @@ class SubjectData:
         return truth_data, lie_data
     
 
+    def cut_for_runs(self, window_size, average=False):
+        runs = np.array_split(self.events, 5)
+
+        def extract_windows(onsets):
+            window_volumes = int(np.round(window_size / self.tr))
+            signals = []
+            for onset in onsets:
+                start = int(np.round(onset / self.tr))
+                end = start + window_volumes
+                if end > self.data.shape[0]:
+                    print(f"Пропущен вопрос (выход за границы данных)")
+                    continue
+                window_data = self.data[start:end, :]
+                if average:
+                    window_data = np.mean(window_data, axis=0)  # Усреднение по времени -> [регионы]
+                signals.append(window_data)
+            return np.array(signals)
+        
+        res = list()
+        for run in runs:
+            res.append(extract_windows(run['onset'].values))
+        return res
+
+    # TODO тут нужно принимать просто данные, а не truth и lie 
     def apply_func(self, truth_data, lie_data, process_func, need_average=False):
         """
         Обрабатывает данные одного испытуемого: применяет функцию 
