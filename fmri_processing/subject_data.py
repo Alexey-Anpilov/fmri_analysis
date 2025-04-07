@@ -93,6 +93,8 @@ class SubjectData:
 
     def cut_for_runs(self, window_size, average=False):
         runs = np.array_split(self.events, 5)
+        unique_names_list = self.events['name'].unique().tolist()
+        # print(unique_names_list)
 
         def extract_windows(onsets):
             window_volumes = int(np.round(window_size / self.tr))
@@ -110,8 +112,17 @@ class SubjectData:
             return np.array(signals)
         
         res = list()
-        for run in runs:
-            res.append(extract_windows(run['onset'].values))
+        for run_ in runs:
+            run = run_[1:]
+            sorted_onset_values = run['onset'].iloc[
+    run['name'].apply(lambda x: unique_names_list.index(x)).argsort()].values
+            res.append(extract_windows(sorted_onset_values))
+        # res = dict()
+        # for name in unique_names_list:
+        #     onsets = self.events[self.events['name'] == name]['onset'].values
+        #     # print(name)
+        #     # print(onsets)
+        #     res[name] = extract_windows(onsets)
         return res
 
     # TODO тут нужно принимать просто данные, а не truth и lie 
@@ -122,9 +133,9 @@ class SubjectData:
         
         need_average -- усредняя по всем вопросам правды и лжи 
         """
-        processed_truth = process_func(data)    # (25, 132)
+        processed_data = process_func(data)    # (25, 132)
 
         if need_average:
-            processed_data = np.mean(processed_truth, axis=0)  # (132,)
+            processed_data = np.mean(processed_data, axis=0)  # (132,)
 
         return processed_data

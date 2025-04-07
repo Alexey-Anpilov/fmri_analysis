@@ -1,9 +1,15 @@
 import os
 import yaml
+from fmri_processing import subjects_info
+
 
 # Путь к директории с данными
-base_dir = "./test_data"
-output_config = "config_test_data.yaml"  # Имя выходного файла
+base_dir = "./data/HC"
+output_config = "config_raw_HC_data.yaml"  # Имя выходного файла
+data_file_name = 'denoised_data.nii.gz'
+numpy_data_dir = './numpy_data/raw_HC_data'
+sub_info = subjects_info.sub_info_hc
+
 
 subjects = []
 
@@ -16,7 +22,7 @@ for dir_name in os.listdir(base_dir):
         continue
     
     # Ищем .txt файл в папке (берём первый найденный)
-    txt_files = [f for f in os.listdir(dir_path) if f.endswith('.txt')]
+    txt_files = [f for f in os.listdir(dir_path) if f.endswith('.txt') and f.startswith('sub')]
     print(txt_files)
     if not txt_files:
         print(f"Внимание: в папке {dir_name} нет .txt файла!")
@@ -24,10 +30,10 @@ for dir_name in os.listdir(base_dir):
     
     # Формируем запись для конфига
     subject_data = {
-        'data_path': os.path.join(dir_path, 'sdenoised_data.nii.gz'),
+        'data_path': os.path.join(dir_path, data_file_name),
         'events_path': os.path.join(dir_path, txt_files[0]),
-        'tr': 1.1,
-        'numpy_path': os.path.join('./numpy_data/test_data', f'{dir_name}.npy') 
+        'tr': sub_info[dir_name]['tr'],
+        'numpy_path': os.path.join(numpy_data_dir, f'{dir_name}.npy') 
     }
     subjects.append(subject_data)
 

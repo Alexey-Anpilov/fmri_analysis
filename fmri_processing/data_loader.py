@@ -8,10 +8,10 @@ class DataLoader:
     def __init__(self, atlas_path):
         self.atlas_path = atlas_path
         self.masker = NiftiLabelsMasker(labels_img=self.atlas_path, standardize=False, verbose=1)    # подумать над вот этим параметром standartize
-
+        self.need_numpy_reload = False
 
     def load_data(self, data_path, npy_path=None):
-        if npy_path is not None and os.path.isfile(npy_path):
+        if npy_path is not None and os.path.isfile(npy_path) and not self.need_numpy_reload:
             return self.load_data_from_npy(npy_path)
         else:
             return self.load_from_nii_and_save(data_path, npy_path)
@@ -46,6 +46,7 @@ class DataLoader:
     def load_data_from_npy(self, data_path):
         """Загружает сохраненные numpy-массивы"""
         if os.path.isfile(data_path):
+            print(f'load from  {data_path}')
             return np.load(data_path)
         else:
             print(f"Warning: Numpy file not found - {data_path}")

@@ -4,7 +4,7 @@ import pickle
 from fmri_processing import *
 from fmri_processing.subjects_info import *
 
-config_path = './config_HC.yaml'
+config_path = './config_test_data.yaml'
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -49,6 +49,34 @@ def draw_signal(data):
     plt.tight_layout()  # Чтобы подписи не накладывались
     plt.show()
 
+def visualize_region(data):
+    roi_signal = data[:, 0]  # Индексы начинаются с 0!
+
+# Визуализация
+    plt.figure(figsize=(12, 6))
+    plt.plot(roi_signal, label=f'Регион {0}', color='red')
+    plt.title(f'Временной ряд для региона {0}')
+    plt.xlabel('Временные точки')
+    plt.ylabel('Сигнал (нормализованный)')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+def normalize(data):
+# Ваш массив (6 стимулов × 132 региона)
+
+    # Для каждого региона (столбца) получаем ранги стимулов
+    ranks = np.zeros_like(data, dtype=int)
+
+    for region in range(data.shape[1]):
+        # Получаем индексы, которые сортируют значения в столбце (от меньшего к большему)
+        sorted_indices = np.argsort(data[:, region])
+        
+        # Преобразуем индексы в ранги (1 для минимального, 6 для максимального)
+        ranks[sorted_indices, region] = np.arange(1, 6)  # 1..6
+    return ranks
+
 
 if __name__ == '__main__':
     subjects = process_config(config_path)
@@ -61,14 +89,12 @@ if __name__ == '__main__':
 
     need_average = False
 
-    is_first = True
+    matrix = None
+
     processed_subjects_true = np.empty((0, 132))
     processed_subjects_lie = np.empty((0, 132))
     # Интерируемся по объектам в конфиге
     for subject in subjects:        
-        if is_first:
-            is_first=False
-            continue
         # Проверяем есть ли путь к сохраненной numpy матрице
         if 'numpy_path' in subject:
             numpy_path = subject['numpy_path']
@@ -86,25 +112,65 @@ if __name__ == '__main__':
         sub.set_data(data)
         sub.set_events(events)
         sub.set_tr(subject['tr'])
+
+
+        draw_data = None
+        runs = sub.cut_for_runs(window_size=10)
+        ranks_list = list()
+        for run in runs:
+            processed_data = sub.apply_func(run, calc_auc)
+            ranks_list.append(normalize(processed_data))
+        summed_ranks = np.sum(ranks_list, axis=0)  # форма (6, 132)
+
+        if matrix is None:
+            matrix = summed_ranks
+        else:
+            matrix = np.concatenate((matrix, summed_ranks), axis=0)
+    np.save('./results/test_matrix',matrix)
+
+
+
+        # for key, item in res.items():
+        #     processed_data = sub.apply_func(np.array(item), calc_auc)
+
+
+        #     if draw_data is None:
+        #         draw_data = processed_data[:,:1]
+        #     else:
+        #         draw_data = np.concatenate((draw_data, processed_data[:, :1]), axis=1)
+        # plt.figure(figsize=(16, 4))
+
+# # Построение тепловой карты
+#         heatmap = sns.heatmap(
+#         draw_data,                   # Данные
+#         annot=False,            # Не показывать значения в ячейках (если True — может быть слишком много)
+#         cmap="viridis",         # Цветовая схема ("coolwarm", "plasma", "magma", "YlOrRd")
+#         yticklabels=[f"Строка {i+1}" for i in range(5)],  # Подписи строк
+#         cbar=True,              # Показать цветовую шкалу
+#         linewidths=0.5,         # Тонкие границы между ячейками
+#         linecolor="grey"        # Цвет границ
+#         )
+
+#         plt.title("Тепловая карта всех строк (5 × 132)")
+#         plt.xlabel("Номер столбца")
+#         plt.ylabel("Строки")
+#         plt.show()
+    
         
-        for run in sub.cut_for_runs(window_size=50):
-            draw_signal(run)
-            visualize(calc_auc(run))
-
         # Обрезаем и преобразуем данные
-        processed_truth, processed_lie = sub.cut_and_apply_function(window_size=10 , process_func=calc_auc, need_average=need_average)
+    #     processed_truth, processed_lie = sub.cut_and_apply_function(window_size=10 , process_func=calc_auc, need_average=need_average)
 
-        if need_average:
-            processed_subjects_true = np.concatenate((processed_subjects_true, processed_truth.reshape(1, 132)))
-            processed_subjects_lie = np.concatenate((processed_subjects_lie, processed_lie.reshape(1, 132)))
-        else: 
-            processed_subjects_true = np.concatenate((processed_subjects_true, processed_truth))
-            processed_subjects_lie = np.concatenate((processed_subjects_lie, processed_lie))
+    #     if need_average:
+    #         processed_subjects_true = np.concatenate((processed_subjects_true, processed_truth.reshape(1, 132)))
+    #         processed_subjects_lie = np.concatenate((processed_subjects_lie, processed_lie.reshape(1, 132)))
+    #     else: 
+    #         processed_subjects_true = np.concatenate((processed_subjects_true, processed_truth))
+    #         processed_subjects_lie = np.concatenate((processed_subjects_lie, processed_lie))
     
 
 
-    if need_average:
-        np.save('./results/HC/area_matrix', np.concatenate((processed_subjects_true, processed_subjects_lie)))
-    else:
-        np.save('./results/HC/max_matrix_true', processed_subjects_true)
-        np.save('./results/HC/max_matrix_lie', processed_subjects_lie)
+    # if need_average:
+    #     np.save('./results/HC/area_matrix', np.concatenate((processed_subjects_true, processed_subjects_lie)))
+    # else:
+    #     np.save('./results/HC/max_matrix_true', processed_subjects_true)
+    #     np.save('./results/HC/max_matrix_lie', processed_subjects_lie)

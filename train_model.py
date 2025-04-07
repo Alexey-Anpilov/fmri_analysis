@@ -4,7 +4,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report
 from sklearn.svm import NuSVC
 import pandas as pd
-
+from sklearn.model_selection import GridSearchCV
 import pickle
 from yaml import safe_load
 from fmri_processing import subjects_info
@@ -32,7 +32,8 @@ def different_models(matrix, labels=None):
             nu=0.3,       # Доля опорных векторов (0 < nu < 1)
             kernel='rbf', # Ядро: 'linear', 'rbf', 'poly'
             gamma='scale', # Коэффициент для ядра RBF
-            random_state=42
+            random_state=42,
+            class_weight='balanced'
         ),
     }
 
@@ -47,18 +48,18 @@ def different_models(matrix, labels=None):
         scores = cross_val_score(model, X_scaled, labels, cv=5, scoring='accuracy')
         print(f"{name} | Средняя точность: {scores.mean():.2f} (±{scores.std():.2f})")
 
-    # # 4. Обучение лучшей модели (SVM показал лучший результат)
-    # param_grid = {
-    #     'nu': [0.3, 0.5, 0.7],
-    #     'gamma': ['scale', 'auto'],
-    #     'kernel': ['rbf', 'linear']
-    # }
+    # 4. Обучение лучшей модели (SVM показал лучший результат)
+    param_grid = {
+        'nu': [0.3, 0.5, 0.7],
+        'gamma': ['scale', 'auto'],
+        'kernel': ['rbf', 'linear']
+    }
 
-    # grid_search = GridSearchCV(NuSVC(), param_grid, cv=3, verbose=2)
-    # grid_search.fit(X_scaled, labels)
+    grid_search = GridSearchCV(NuSVC(), param_grid, cv=3, verbose=2)
+    grid_search.fit(X_scaled, labels)
 
-    # best_model = grid_search.best_estimator_
-    # print("\nЛучшие параметры:", grid_search.best_params_)
+    best_model = grid_search.best_estimator_
+    print("\nЛучшие параметры:", grid_search.best_params_)
     
     best_model = model
 
@@ -122,26 +123,32 @@ def process_config(config_path):
         return data_file, events_file, tr
 
 if __name__ == '__main__':
-    average = True
-    if average:
-        matrix =  np.load(f'results/HC/area_matrix.npy')
-        print(matrix.shape)
-        model = different_models(matrix)
-    else: 
-        true_matrix = np.load(f'results/HC/max_matrix_true.npy')
-        lie_matrix = np.load(f'results/HC/max_matrix_lie.npy')
+    # average = True
+    # if average:
+    #     matrix =  np.load(f'results/HC/area_matrix.npy')
+    #     print(matrix.shape)
+    #     model = different_models(matrix)
+    # else: 
+    #     true_matrix = np.load(f'results/HC/max_matrix_true.npy')
+    #     lie_matrix = np.load(f'results/HC/max_matrix_lie.npy')
         
-        labels = np.array([0] * (true_matrix.shape[0]) + [1] * (lie_matrix.shape[0]))
+    #     labels = np.array([0] * (true_matrix.shape[0]) + [1] * (lie_matrix.shape[0]))
         
-        matrix = np.concatenate((true_matrix, lie_matrix), axis=0)
-        print(matrix.shape)
-        print(labels.shape)
-        model = different_models(matrix, labels)
+    #     matrix = np.concatenate((true_matrix, lie_matrix), axis=0)
+    #     print(matrix.shape)
+    #     print(labels.shape)
+    #     model = different_models(matrix, labels)
 
+    matrix = np.load('./results/ranks_matrix.npy')
+    N = matrix.shape[0]  # Длина массива
+    arr = np.zeros(N, dtype=int)  # Создаем массив из нулей
+    arr[3::5] = 1  # Каждый 4-й элемент (начиная с индекса 3) делаем 1
+    model = different_models(matrix, arr)
+    
 
-    # Сохранение модели в файл
-    with open('model.pkl', 'wb') as f:
-        pickle.dump(model, f)
+    # # Сохранение модели в файл
+    # with open('ranks_model.pkl', 'wb') as f:
+    #     pickle.dump(model, f)
 
     # with open('model.pkl', 'rb') as f:
     #     model = pickle.load(f)
