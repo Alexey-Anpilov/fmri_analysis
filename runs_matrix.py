@@ -4,7 +4,12 @@ import pickle
 from fmri_processing import *
 from fmri_processing.subjects_info import *
 
-config_path = './config_test_data.yaml'
+test = True
+if test:
+    config_path = './config_test_data.yaml'
+else:
+    config_path = './config_raw_HC_data.yaml'
+
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -118,7 +123,7 @@ if __name__ == '__main__':
         runs = sub.cut_for_runs(window_size=10)
         ranks_list = list()
         for run in runs:
-            processed_data = sub.apply_func(run, calc_auc)
+            processed_data = sub.apply_func(run, calc_maximum)
             ranks_list.append(normalize(processed_data))
         summed_ranks = np.sum(ranks_list, axis=0)  # форма (6, 132)
 
@@ -126,7 +131,10 @@ if __name__ == '__main__':
             matrix = summed_ranks
         else:
             matrix = np.concatenate((matrix, summed_ranks), axis=0)
-    np.save('./results/test_matrix',matrix)
+    if test:
+        np.save('./results/test_matrix', matrix)
+    else:
+        np.save('./results/max_runs_matrix',matrix)
 
 
 
