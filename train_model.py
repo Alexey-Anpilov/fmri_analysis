@@ -8,6 +8,20 @@ from sklearn.model_selection import GridSearchCV
 import pickle
 from yaml import safe_load
 from fmri_processing import subjects_info
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
+def visualize(data):
+# Создаем тепловую карту
+    plt.figure(figsize=(10, 6))  # Задаем размер графика
+    sns.heatmap(data, cmap='viridis', cbar_kws={'label': 'Значения'})  # 'viridis' — цветовая карта
+    plt.title('Тепловая карта массива')
+    plt.xlabel('Ось X')
+    plt.ylabel('Ось Y')
+    plt.show()
+
+
 
 def different_models(matrix, labels=None):
     # 1. Загрузка данных и подготовка
@@ -25,6 +39,8 @@ def different_models(matrix, labels=None):
     # 2. Масштабирование признаков
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(matrix)
+
+    visualize(X_scaled)
 
     # 3. Сравнение моделей
     models = {
@@ -123,11 +139,11 @@ def process_config(config_path):
         return data_file, events_file, tr
 
 if __name__ == '__main__':
-    # average = True
-    # if average:
-    #     matrix =  np.load(f'results/HC/area_matrix.npy')
-    #     print(matrix.shape)
-    #     model = different_models(matrix)
+    average = True
+    if average:
+        matrix =  np.load(f'/home/aaanpilov/diploma/project/truth_lie_matrix_HC_raw.npy')
+        print(matrix.shape)
+        model = different_models(matrix)
     # else: 
     #     true_matrix = np.load(f'results/HC/max_matrix_true.npy')
     #     lie_matrix = np.load(f'results/HC/max_matrix_lie.npy')
@@ -139,12 +155,14 @@ if __name__ == '__main__':
     #     print(labels.shape)
     #     model = different_models(matrix, labels)
 
-    matrix = np.load('./results/ranks_matrix.npy')
-    N = matrix.shape[0]  # Длина массива
-    arr = np.zeros(N, dtype=int)  # Создаем массив из нулей
-    arr[3::5] = 1  # Каждый 4-й элемент (начиная с индекса 3) делаем 1
-    model = different_models(matrix, arr)
-    
+    # matrix = np.load('./results/ranks_matrix.npy')
+    # N = matrix.shape[0]  # Длина массива
+    # arr = np.zeros(N, dtype=int)  # Создаем массив из нулей
+    # arr[3::5] = 1  # Каждый 4-й элемент (начиная с индекса 3) делаем 1
+    # model = different_models(matrix, arr)
+    # matrix_schz = np.load(f'results/SCHZ/area_matrix.npy')
+    # print(model.predict(matrix_schz))    
+
 
     # # Сохранение модели в файл
     # with open('ranks_model.pkl', 'wb') as f:

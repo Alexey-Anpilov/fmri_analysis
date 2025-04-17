@@ -6,8 +6,6 @@ from fmri_processing import *
 from fmri_processing.subjects_info import *
 
 
-
-
 def load_from_nii_and_save(data_loader):
     '''
         Сохраняет npy матрицы для фМРТ данных в отдельной директории

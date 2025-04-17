@@ -4,13 +4,7 @@ import pickle
 from fmri_processing import *
 from fmri_processing.subjects_info import *
 
-test = True
-if test:
-    config_path = './config_test_data.yaml'
-else:
-    config_path = './config_raw_HC_data.yaml'
-
-
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler
 import seaborn as sns
 import matplotlib.pyplot as plt
 def visualize(data):
@@ -77,13 +71,12 @@ def normalize(data):
     for region in range(data.shape[1]):
         # Получаем индексы, которые сортируют значения в столбце (от меньшего к большему)
         sorted_indices = np.argsort(data[:, region])
-        
         # Преобразуем индексы в ранги (1 для минимального, 6 для максимального)
         ranks[sorted_indices, region] = np.arange(1, 6)  # 1..6
     return ranks
 
 
-if __name__ == '__main__':
+def process_runs_and_save_matrix(config_path, matrix_path):
     subjects = process_config(config_path)
      # Загружаем модель
     with open('model.pkl', 'rb') as f:
@@ -119,11 +112,10 @@ if __name__ == '__main__':
         sub.set_tr(subject['tr'])
 
 
-        draw_data = None
         runs = sub.cut_for_runs(window_size=10)
         ranks_list = list()
         for run in runs:
-            processed_data = sub.apply_func(run, calc_maximum)
+            processed_data = sub.apply_func(run, calc_minimum)
             ranks_list.append(normalize(processed_data))
         summed_ranks = np.sum(ranks_list, axis=0)  # форма (6, 132)
 
@@ -131,10 +123,92 @@ if __name__ == '__main__':
             matrix = summed_ranks
         else:
             matrix = np.concatenate((matrix, summed_ranks), axis=0)
-    if test:
-        np.save('./results/test_matrix', matrix)
-    else:
-        np.save('./results/max_runs_matrix',matrix)
+    np.save(matrix_path, matrix)
+
+def process_runs_for_and_save_matrix(config_path, matrix_path):
+    subjects = process_config(config_path)
+    # Загружаем модель
+    with open('model.pkl', 'rb') as f:
+        model = pickle.load(f)
+
+    # Создаем загрузчик данных
+    data_loader = DataLoader(atlas_path)
+
+    need_average = False
+
+    matrix = None
+
+    processed_subjects_true = np.empty((0, 132))
+    processed_subjects_lie = np.empty((0, 132))
+    # Интерируемся по объектам в конфиге
+    for subject in subjects:        
+        # Проверяем есть ли путь к сохраненной numpy матрице
+        if 'numpy_path' in subject:
+            numpy_path = subject['numpy_path']
+        else:
+            numpy_path = None
+
+        # Получаем и обрабатываем данные
+        data = data_loader.load_data(subject['data_path'], numpy_path)
+        events = data_loader.load_events(subject['events_path'])
+        if data is None or events is None:
+            continue
+
+        # Формируем объект хранящий данные
+        sub = SubjectData()
+        sub.set_data(data)
+        sub.set_events(events)
+        sub.set_tr(subject['tr'])
+        
+        runs = sub.cut_for_runs(window_size=10)
+        ranks_list = list()
+        for run in runs:
+            processed_data = sub.apply_func(run, calc_auc)
+            print(processed_data.shape)
+            ranks_list.append(processed_data)
+            mean_area = np.mean(ranks_list, axis=0)  # форма (6, 132)
+            zscore_scaler = StandardScaler()
+            mean_area = zscore_scaler.fit_transform(mean_area)
+        if matrix is None:
+            matrix = mean_area
+        else:
+            matrix = np.concatenate((matrix, mean_area), axis=0)
+    np.save(matrix_path, matrix)
+
+
+
+
+
+if __name__ == '__main__':  
+    test_config_path = './config_test_data.yaml'
+    config_path = './config_raw_HC_data.yaml'
+
+    paths = [
+        {
+            'config':  './config_raw_HC_data.yaml',
+            'matrix': './ranks_matrix/HC_raw_matrix_min' 
+         },
+         {
+            'config': './config_test_data.yaml',
+            'matrix': './ranks_matrix/test_matrix_min' 
+         }
+    ]
+
+
+    paths_area = [
+        {
+            'config':  './config_raw_HC_data.yaml',
+            'matrix': './area_matrix/HC_raw_matrix_auc' 
+         },
+         {
+            'config': './config_test_data.yaml',
+            'matrix': './area_matrix/test_matrix_auc' 
+         }
+    ]
+
+    for path in paths:
+        process_runs_and_save_matrix(path['config'], path['matrix'])
+        # process_runs_for_and_save_matrix(path['config'], path['matrix'])
 
 
 

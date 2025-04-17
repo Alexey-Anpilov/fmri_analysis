@@ -38,7 +38,7 @@ class SubjectData:
         truth_data = self.cut_answers_for_truth(window_size)
         lie_data = self.cut_answers_for_lie(window_size)
 
-        truth_data_processed = self.apply_func(truth_data, lie_data, process_func, need_average)
+        truth_data_processed = self.apply_func(truth_data, process_func, need_average)
         lie_data_processed = self.apply_func(lie_data, process_func, need_average)
         
         return truth_data_processed, lie_data_processed
