@@ -5,13 +5,14 @@ from nilearn.maskers import NiftiLabelsMasker
 
 
 class DataLoader:
-    def __init__(self, atlas_path):
+    # TODO: перенести создание NiftiLabelsMasker в load_from_nii_and_save
+    def __init__(self, atlas_path, standartize=False, tr=1.0):
         self.atlas_path = atlas_path
-        self.masker = NiftiLabelsMasker(labels_img=self.atlas_path, standardize=False, verbose=1)    # подумать над вот этим параметром standartize
-        self.need_numpy_reload = False
+        self.masker = NiftiLabelsMasker(labels_img=self.atlas_path, standardize=standartize, verbose=1, tr=tr)    
+
 
     def load_data(self, data_path, npy_path=None):
-        if npy_path is not None and os.path.isfile(npy_path) and not self.need_numpy_reload:
+        if npy_path is not None:
             return self.load_data_from_npy(npy_path)
         else:
             return self.load_from_nii_and_save(data_path, npy_path)

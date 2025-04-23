@@ -1,69 +1,73 @@
 import numpy as np
-import pickle
-
+from enum import Enum, auto
 from fmri_processing import *
 from fmri_processing.subjects_info import *
-
-from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler
-import seaborn as sns
-import matplotlib.pyplot as plt
-def visualize(data):
-# Создаем тепловую карту
-    plt.figure(figsize=(10, 6))  # Задаем размер графика
-    sns.heatmap(data, cmap='viridis', cbar_kws={'label': 'Значения'})  # 'viridis' — цветовая карта
-    plt.title('Тепловая карта массива (480, 132)')
-    plt.xlabel('Ось X')
-    plt.ylabel('Ось Y')
-    plt.show()
-
-
+from fmri_processing.utils import draw_heat_map
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 
-def draw_signal(data):
-    # Выбираем регион (например, регион с индексом 0)
-    selected_regions = [0]
 
-  # Создаём сетку графиков:
-    fig, axes = plt.subplots(
-        nrows=data.shape[0],  # Количество графиков = x
-        figsize=(10, 3 * data.shape[0]),  # Размер фигуры
-        sharex=True  # Общая ось X для удобства
-    )
+class DataOption(Enum):
+    RAW_HC = auto()
+    RAW_TEST = auto()
+    HC = auto()
+    TEST = auto()
 
-    # Если x=1, axes станет scalar, поэтому приводим к списку:
-    if data.shape[0] == 1:
-        axes = [axes]
 
-    # Рисуем каждый график:
-    for i, ax in enumerate(axes):
-        for region in selected_regions:
-            ax.plot(data[i, :, region], label=f'Регион {region}')
-        ax.set_ylabel('Активность')
-        ax.set_title(f'График {i + 1}')
-        ax.grid(True)
-        ax.legend()
+def get_stats(ranks_list):
+    # Инициализация
+    counts_3_5 = np.zeros(132, dtype=int)  # Счётчик для 132 регионов
 
-    plt.xlabel('Время')
-    plt.tight_layout()  # Чтобы подписи не накладывались
-    plt.show()
+    # Перебор всех прогонов (runs)
+    for ranks in ranks_list:
+        is_five = (ranks[3, :] >= 4)  # Где стимул 3 == 5 в текущем прогоне
+        counts_3_5 += is_five.astype(int)
 
-def visualize_region(data):
-    roi_signal = data[:, 0]  # Индексы начинаются с 0!
+    # Анализ результатов
+    max_count = np.max(counts_3_5)
+    top_regions = np.where(counts_3_5 == max_count)[0]
 
-# Визуализация
+    print(f"Третий стимул чаще всего был максимальным в регионах: {top_regions}")
+    print(f"Максимальное количество раз: {max_count}")
+
+    # Визуализация (опционально)
     plt.figure(figsize=(12, 6))
-    plt.plot(roi_signal, label=f'Регион {0}', color='red')
-    plt.title(f'Временной ряд для региона {0}')
-    plt.xlabel('Временные точки')
-    plt.ylabel('Сигнал (нормализованный)')
-    plt.legend()
-    plt.grid(True)
+    plt.bar(range(132), counts_3_5)
+    plt.xlabel("Регион")
+    plt.ylabel("Количество прогонов с рангом 5")
+    plt.title("Частота максимального ранга для стимула 3")
     plt.show()
+
+
+def normalize_proportional(data):
+    # Копируем данные, чтобы не изменять исходный массив
+    data = np.array(data, dtype=float)
+    ranks = np.zeros_like(data)
+    
+    for region in range(data.shape[1]):
+        # Получаем значения для текущего региона
+        region_data = data[:, region]
+        
+        # Вычисляем сумму значений (для нормализации)
+        sum_values = np.sum(region_data)
+        
+        if sum_values > 0:
+            # Распределяем баллы пропорционально значениям
+            # Сумма баллов должна быть 15 (1+2+3+4+5)
+            proportional_scores = 15 * region_data / sum_values
+        else:
+            # Если все значения нулевые, ставим равные баллы
+            proportional_scores = np.ones(5) * 3  # Среднее значение
+            
+        # Округляем до 2 знаков после запятой (для читаемости)
+        ranks[:, region] = np.round(proportional_scores, 2)
+    
+    return ranks
 
 
 def normalize(data):
-# Ваш массив (6 стимулов × 132 региона)
+# Ваш массив (5 стимулов × 132 региона)
 
     # Для каждого региона (столбца) получаем ранги стимулов
     ranks = np.zeros_like(data, dtype=int)
@@ -76,21 +80,31 @@ def normalize(data):
     return ranks
 
 
-def process_runs_and_save_matrix(config_path, matrix_path):
+def normalize_reduced(data):
+    # Создаем массив нулей того же размера, что и входные данные
+    ranks = np.zeros_like(data, dtype=int)
+    
+    for region in range(data.shape[1]):
+        # Получаем индексы, которые сортируют значения в столбце (от меньшего к большему)
+        sorted_indices = np.argsort(data[:, region])
+        # Присваиваем:
+        # - 0 для всех элементов по умолчанию (уже сделано при создании ranks)
+        # - 1 для второго по величине
+        ranks[sorted_indices[-2], region] = 1
+        # - 2 для максимального
+        ranks[sorted_indices[-1], region] = 2
+    
+    return ranks
+
+
+def process_runs_and_save_matrix(config_path, matrix_path, processing_func=calc_auc, normalize_func=normalize):
     subjects = process_config(config_path)
-     # Загружаем модель
-    with open('model.pkl', 'rb') as f:
-        model = pickle.load(f)
 
     # Создаем загрузчик данных
     data_loader = DataLoader(atlas_path)
 
-    need_average = False
-
     matrix = None
 
-    processed_subjects_true = np.empty((0, 132))
-    processed_subjects_lie = np.empty((0, 132))
     # Интерируемся по объектам в конфиге
     for subject in subjects:        
         # Проверяем есть ли путь к сохраненной numpy матрице
@@ -115,31 +129,28 @@ def process_runs_and_save_matrix(config_path, matrix_path):
         runs = sub.cut_for_runs(window_size=10)
         ranks_list = list()
         for run in runs:
-            processed_data = sub.apply_func(run, calc_minimum)
-            ranks_list.append(normalize(processed_data))
+            processed_data = sub.apply_func(run, processing_func)
+            ranks = normalize_func(processed_data)
+            ranks_list.append(ranks)
         summed_ranks = np.sum(ranks_list, axis=0)  # форма (6, 132)
 
         if matrix is None:
             matrix = summed_ranks
         else:
             matrix = np.concatenate((matrix, summed_ranks), axis=0)
+    os.makedirs(os.path.dirname(matrix_path), exist_ok=True)
     np.save(matrix_path, matrix)
 
-def process_runs_for_and_save_matrix(config_path, matrix_path):
+
+
+def process_runs_into_params_and_save_matrix(config_path, matrix_path, processing_func=calc_auc):
     subjects = process_config(config_path)
-    # Загружаем модель
-    with open('model.pkl', 'rb') as f:
-        model = pickle.load(f)
 
     # Создаем загрузчик данных
     data_loader = DataLoader(atlas_path)
 
-    need_average = False
-
     matrix = None
 
-    processed_subjects_true = np.empty((0, 132))
-    processed_subjects_lie = np.empty((0, 132))
     # Интерируемся по объектам в конфиге
     for subject in subjects:        
         # Проверяем есть ли путь к сохраненной numpy матрице
@@ -159,100 +170,66 @@ def process_runs_for_and_save_matrix(config_path, matrix_path):
         sub.set_data(data)
         sub.set_events(events)
         sub.set_tr(subject['tr'])
-        
+
         runs = sub.cut_for_runs(window_size=10)
-        ranks_list = list()
-        for run in runs:
-            processed_data = sub.apply_func(run, calc_auc)
-            print(processed_data.shape)
-            ranks_list.append(processed_data)
-            mean_area = np.mean(ranks_list, axis=0)  # форма (6, 132)
-            zscore_scaler = StandardScaler()
-            mean_area = zscore_scaler.fit_transform(mean_area)
+        print(np.array(runs).shape)
+        stimulus_data = np.mean(runs, axis=0)
+        print(stimulus_data.shape)
+
+        processed_stimulus_data = sub.apply_func(stimulus_data, processing_func)
+
         if matrix is None:
-            matrix = mean_area
+            matrix = processed_stimulus_data
         else:
-            matrix = np.concatenate((matrix, mean_area), axis=0)
-    np.save(matrix_path, matrix)
+            matrix = np.concatenate((matrix, processed_stimulus_data), axis=0)
+    print(matrix.shape)
+    os.makedirs(os.path.dirname(matrix_path), exist_ok=True)
+    np.save(matrix_path, matrix)    
 
 
 
+def build_ranks_matrixes_for_all(save_dir, normalize_func=normalize):
+    config_path_raw_hc = '/home/aaanpilov/diploma/project/configs/raw_HC_data.yaml'
+    raw_hc = 'raw_HC'
+
+    config_path_hc = '/home/aaanpilov/diploma/project/configs/HC_data.yaml'
+    hc = 'HC'
+
+    config_path_raw_test = '/home/aaanpilov/diploma/project/configs/raw_test_data.yaml'
+    raw_test = 'raw_test'
+
+    config_path_test = '/home/aaanpilov/diploma/project/configs/test_data.yaml'
+    test = 'test'
+
+    for data_option in DataOption:
+        if data_option == DataOption.HC:
+            config_path = config_path_hc
+            data_option_path = hc
+        elif data_option == DataOption.RAW_HC:
+            config_path = config_path_raw_hc
+            data_option_path = raw_hc
+        elif data_option == DataOption.RAW_TEST:
+            config_path = config_path_raw_test
+            data_option_path = raw_test
+        else:
+            config_path = config_path_test
+            data_option_path = test
+
+        for name, func in funcs.items():
+            matrix_path = os.path.join(os.path.join(save_dir, data_option_path), name)
+            process_runs_and_save_matrix(config_path, matrix_path, func, normalize_func)
+            # process_runs_into_params_and_save_matrix(config_path, matrix_path, func)
 
 
-if __name__ == '__main__':  
-    test_config_path = './config_test_data.yaml'
-    config_path = './config_raw_HC_data.yaml'
+if __name__ == '__main__':
+    # save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix'  
+    # build_ranks_matrixes_for_all(save_dir, normalize)
 
-    paths = [
-        {
-            'config':  './config_raw_HC_data.yaml',
-            'matrix': './ranks_matrix/HC_raw_matrix_min' 
-         },
-         {
-            'config': './config_test_data.yaml',
-            'matrix': './ranks_matrix/test_matrix_min' 
-         }
-    ]
+    # save_dir_proportional_ranks = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix/proportional'
+    # build_ranks_matrixes_for_all(save_dir_proportional_ranks, normalize_proportional)
 
+    # save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/average_stimulus'  
+    # build_ranks_matrixes_for_all(save_dir, normalize)
 
-    paths_area = [
-        {
-            'config':  './config_raw_HC_data.yaml',
-            'matrix': './area_matrix/HC_raw_matrix_auc' 
-         },
-         {
-            'config': './config_test_data.yaml',
-            'matrix': './area_matrix/test_matrix_auc' 
-         }
-    ]
-
-    for path in paths:
-        process_runs_and_save_matrix(path['config'], path['matrix'])
-        # process_runs_for_and_save_matrix(path['config'], path['matrix'])
-
-
-
-        # for key, item in res.items():
-        #     processed_data = sub.apply_func(np.array(item), calc_auc)
-
-
-        #     if draw_data is None:
-        #         draw_data = processed_data[:,:1]
-        #     else:
-        #         draw_data = np.concatenate((draw_data, processed_data[:, :1]), axis=1)
-        # plt.figure(figsize=(16, 4))
-
-# # Построение тепловой карты
-#         heatmap = sns.heatmap(
-#         draw_data,                   # Данные
-#         annot=False,            # Не показывать значения в ячейках (если True — может быть слишком много)
-#         cmap="viridis",         # Цветовая схема ("coolwarm", "plasma", "magma", "YlOrRd")
-#         yticklabels=[f"Строка {i+1}" for i in range(5)],  # Подписи строк
-#         cbar=True,              # Показать цветовую шкалу
-#         linewidths=0.5,         # Тонкие границы между ячейками
-#         linecolor="grey"        # Цвет границ
-#         )
-
-#         plt.title("Тепловая карта всех строк (5 × 132)")
-#         plt.xlabel("Номер столбца")
-#         plt.ylabel("Строки")
-#         plt.show()
-    
-        
-        # Обрезаем и преобразуем данные
-    #     processed_truth, processed_lie = sub.cut_and_apply_function(window_size=10 , process_func=calc_auc, need_average=need_average)
-
-    #     if need_average:
-    #         processed_subjects_true = np.concatenate((processed_subjects_true, processed_truth.reshape(1, 132)))
-    #         processed_subjects_lie = np.concatenate((processed_subjects_lie, processed_lie.reshape(1, 132)))
-    #     else: 
-    #         processed_subjects_true = np.concatenate((processed_subjects_true, processed_truth))
-    #         processed_subjects_lie = np.concatenate((processed_subjects_lie, processed_lie))
-    
-
-
-    # if need_average:
-    #     np.save('./results/HC/area_matrix', np.concatenate((processed_subjects_true, processed_subjects_lie)))
-    # else:
-    #     np.save('./results/HC/max_matrix_true', processed_subjects_true)
-    #     np.save('./results/HC/max_matrix_lie', processed_subjects_lie)
+    save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix/reduced_ranks'  
+    build_ranks_matrixes_for_all(save_dir, normalize_reduced)

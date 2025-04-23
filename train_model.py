@@ -5,9 +5,7 @@ from sklearn.metrics import classification_report
 from sklearn.svm import NuSVC
 import pandas as pd
 from sklearn.model_selection import GridSearchCV
-import pickle
 from yaml import safe_load
-from fmri_processing import subjects_info
 import seaborn as sns
 import matplotlib.pyplot as plt
 

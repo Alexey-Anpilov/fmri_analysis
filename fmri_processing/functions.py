@@ -14,3 +14,9 @@ def calc_max_min(data):
 
 def calc_auc(data):
     return np.trapz(data, axis=1)  # Интегрируем по времени для каждого ответа и региона
+
+funcs = {
+    'auc' : calc_auc, 
+    'max' : calc_maximum, 
+    'min' : calc_minimum,
+    'max_min' : calc_max_min}

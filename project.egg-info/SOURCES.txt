@@ -1,0 +1,11 @@
+setup.py
+fmri_processing/__init__.py
+fmri_processing/data_loader.py
+fmri_processing/functions.py
+fmri_processing/subject_data.py
+fmri_processing/subjects_info.py
+fmri_processing/utils.py
+project.egg-info/PKG-INFO
+project.egg-info/SOURCES.txt
+project.egg-info/dependency_links.txt
+project.egg-info/top_level.txt

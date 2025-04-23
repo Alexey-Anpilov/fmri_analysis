@@ -1,5 +1,8 @@
 from yaml import safe_load
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 
 def process_config(config_path):
     with open(config_path) as f:
@@ -44,3 +47,15 @@ def get_predict_results_str(events, predicted_truth, predicted_lie):
         res += f"{elem[0]} : {status} {elem[2]} \n"
     
     return res 
+
+
+def draw_heat_map(data):
+    '''
+        Создает тепловую карту для данных размера (x, 132)
+    '''
+    plt.figure(figsize=(10, 6))  # Задаем размер графика
+    sns.heatmap(data, cmap='viridis', cbar_kws={'label': 'Значения'})  # 'viridis' — цветовая карта
+    plt.title('Тепловая карта массива')
+    plt.xlabel('Ось X')
+    plt.ylabel('Ось Y')
+    plt.show()
