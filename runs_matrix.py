@@ -7,7 +7,6 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-
 class DataOption(Enum):
     RAW_HC = auto()
     RAW_TEST = auto()
@@ -125,7 +124,6 @@ def process_runs_and_save_matrix(config_path, matrix_path, processing_func=calc_
         sub.set_events(events)
         sub.set_tr(subject['tr'])
 
-
         runs = sub.cut_for_runs(window_size=10)
         ranks_list = list()
         for run in runs:
@@ -187,6 +185,68 @@ def process_runs_into_params_and_save_matrix(config_path, matrix_path, processin
     np.save(matrix_path, matrix)    
 
 
+def process_runs_into_average_matrix(config_path, matrix_path, processing_func=calc_auc):
+    subjects = process_config(config_path)
+
+    # Создаем загрузчик данных
+    data_loader = DataLoader(atlas_path)
+
+    matrix = None
+
+
+    # Инициализация списков с помощью спискового включения
+    matrix_list_truth = [None] * 5
+    matrix_list_lie = [None] * 5
+
+    
+    # Интерируемся по объектам в конфиге
+    for subject in subjects:        
+        # Проверяем есть ли путь к сохраненной numpy матрице
+        if 'numpy_path' in subject:
+            numpy_path = subject['numpy_path']
+        else:
+            numpy_path = None
+
+        # Получаем и обрабатываем данные
+        data = data_loader.load_data(subject['data_path'], numpy_path)
+        events = data_loader.load_events(subject['events_path'])
+        if data is None or events is None:
+            continue
+
+        # Формируем объект хранящий данные
+        sub = SubjectData()
+        sub.set_data(data)
+        sub.set_events(events)
+        sub.set_tr(subject['tr'])
+
+        runs = sub.cut_for_runs(window_size=10)
+        stimulus_list = list()
+        for run in runs:
+            processed_data = sub.apply_func(run, processing_func)
+            stimulus_list.append(processed_data)
+
+
+        for k in range(len(stimulus_list)):  # Перебираем каждую строку (0, 1, 2, 3, 4)
+            # 1. Усредняем k-ю строку всех массивов
+            k_row_avg = np.mean([arr[k] for arr in stimulus_list], axis=0, keepdims=True)  # (1, 132)
+            
+            # 2. Усредняем все остальные строки (все, кроме k-й)
+            other_rows = np.concatenate([np.delete(arr, k, axis=0) for arr in stimulus_list])  # (4*N, 132)
+            other_avg = np.mean(other_rows, axis=0, keepdims=True)  # (1, 132)
+            
+            # Обновляем матрицы truth и lie с помощью более компактного кода
+            matrix_list_truth[k] = other_avg if matrix_list_truth[k] is None else np.concatenate((matrix_list_truth[k], other_avg))
+            matrix_list_lie[k] = k_row_avg if matrix_list_lie[k] is None else np.concatenate((matrix_list_lie[k], k_row_avg
+                                                                                              ))
+
+    for k in range(len(matrix_list_truth)):
+        matrix = np.concatenate((matrix_list_truth[k], matrix_list_lie[k]))
+        print(matrix.shape)
+        if k == 3:
+            draw_heat_map(matrix)
+        os.makedirs(os.path.dirname(matrix_path), exist_ok=True)
+        np.save(matrix_path + str(k), matrix)
+
 
 def build_ranks_matrixes_for_all(save_dir, normalize_func=normalize):
     config_path_raw_hc = '/home/aaanpilov/diploma/project/configs/raw_HC_data.yaml'
@@ -231,5 +291,13 @@ if __name__ == '__main__':
     # save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/average_stimulus'  
     # build_ranks_matrixes_for_all(save_dir, normalize)
 
-    save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix/reduced_ranks'  
-    build_ranks_matrixes_for_all(save_dir, normalize_reduced)
+    # save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix/reduced_ranks'  
+    # build_ranks_matrixes_for_all(save_dir, normalize_reduced)
+
+    draw_heat_map(np.load('/home/aaanpilov/diploma/project/numpy_matrixes/average_matrix/test/auc.npy'))
+
+    save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/average_matrix/propose/'  
+    for name, func in funcs.items():
+        matrix_path = os.path.join(os.path.join(save_dir, 'test'), name)
+        process_runs_into_average_matrix('/home/aaanpilov/diploma/project/configs/test_data.yaml', matrix_path, func)
+        break
