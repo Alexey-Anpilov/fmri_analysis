@@ -15,6 +15,14 @@ config_raw_test = '/home/aaanpilov/diploma/project/configs/raw_test_data.yaml'
 config_hc = '/home/aaanpilov/diploma/project/configs/HC_data.yaml'
 config_test = '/home/aaanpilov/diploma/project/configs/test_data.yaml'
 
+config_raw_card_hc = '/home/aaanpilov/diploma/project/configs/raw_card_hc.yaml'
+config_card_hc = '/home/aaanpilov/diploma/project/configs/card_hc.yaml'
+
+config_card_test = '/home/aaanpilov/diploma/project/configs/card_test.yaml'
+config_raw_car_test = '/home/aaanpilov/diploma/project/configs/raw_card_test.yaml'
+
+config_raw_schz = '/home/aaanpilov/diploma/project/configs/raw_schz.yaml'
+config_schz = '/home/aaanpilov/diploma/project/configs/schz.yaml'
 
 def load_from_nii_and_save(config_path, standartize=False):
     # Получаем даннные из конфига    
@@ -31,10 +39,13 @@ def load_from_nii_and_save(config_path, standartize=False):
 
 
 if __name__ == '__main__':
-    #Считать сырые данные
-    for config in (config_raw_test, config_raw_hc):
-        load_from_nii_and_save(config, standartize=False)
+    # #Считать сырые данные
+    # for config in (config_raw_test, config_raw_hc):
+    #     load_from_nii_and_save(config, standartize=False)
     
-    # Считать данные в z-score
-    for config in (config_hc, config_test):
-        load_from_nii_and_save(config, standartize=True)
+    # # Считать данные в z-score
+    # for config in (config_hc, config_test):
+    #     load_from_nii_and_save(config, standartize=True)
+
+    load_from_nii_and_save(config_schz, standartize=True)
+    load_from_nii_and_save(config_raw_schz, standartize=False)

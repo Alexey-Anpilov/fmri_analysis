@@ -92,9 +92,12 @@ class SubjectData:
     
 
     def cut_for_runs(self, window_size, average=False):
-        runs = np.array_split(self.events, 5)
-        unique_names_list = self.events['name'].unique().tolist()
-        # print(unique_names_list)
+        n_chunks = len(self.events) // 6  # количество полных частей по 6
+        runs = np.array_split(self.events.iloc[:n_chunks*6], n_chunks)  # делим только строки, кратные 6
+        for run in runs:
+            print(run)
+        unique_names_list = self.events['stimulus_number'].unique().tolist()
+        print(unique_names_list)
 
         def extract_windows(onsets):
             window_volumes = int(np.round(window_size / self.tr))
@@ -110,19 +113,32 @@ class SubjectData:
                     window_data = np.mean(window_data, axis=0)  # Усреднение по времени -> [регионы]
                 signals.append(window_data)
             return np.array(signals)
+
+        # res = list()
+        # for run_ in runs:
+        #     run = run_[1:]  # Пропускаем первую строку
+            
+        #     # Сортируем по stimulus_number вместо name
+        #     sorted_onset_values = run['onset'].iloc[
+        #         run['stimulus_number'].argsort()  # Сортировка по stimulus_number
+        #     ].values
+            
+        #     res.append(extract_windows(sorted_onset_values))
         
+        # return res
+
         res = list()
         for run_ in runs:
             run = run_[1:]
             sorted_onset_values = run['onset'].iloc[
-    run['name'].apply(lambda x: unique_names_list.index(x)).argsort()].values
+    run['stimulus_number'].apply(lambda x: unique_names_list.index(x)).argsort()].values
             res.append(extract_windows(sorted_onset_values))
-        # res = dict()
-        # for name in unique_names_list:
-        #     onsets = self.events[self.events['name'] == name]['onset'].values
-        #     # print(name)
-        #     # print(onsets)
-        #     res[name] = extract_windows(onsets)
+    #     # res = dict()
+    #     # for name in unique_names_list:
+    #     #     onsets = self.events[self.events['name'] == name]['onset'].values
+    #     #     # print(name)
+    #     #     # print(onsets)
+    #     #     res[name] = extract_windows(onsets)
         return res
 
     # TODO тут нужно принимать просто данные, а не truth и lie 

@@ -6,6 +6,7 @@ from fmri_processing.utils import draw_heat_map
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+from fmri_processing.utils import *
 
 class DataOption(Enum):
     RAW_HC = auto()
@@ -14,29 +15,30 @@ class DataOption(Enum):
     TEST = auto()
 
 
-def get_stats(ranks_list):
+def get_stats(ranks_list, stimulus_index=3):
     # Инициализация
     counts_3_5 = np.zeros(132, dtype=int)  # Счётчик для 132 регионов
 
     # Перебор всех прогонов (runs)
     for ranks in ranks_list:
-        is_five = (ranks[3, :] >= 4)  # Где стимул 3 == 5 в текущем прогоне
+        is_five = (ranks[stimulus_index, :] >= 4)  # Где стимул 3 == 5 в текущем прогоне
         counts_3_5 += is_five.astype(int)
 
-    # Анализ результатов
-    max_count = np.max(counts_3_5)
-    top_regions = np.where(counts_3_5 == max_count)[0]
+    return counts_3_5.reshape(1, -1)
+    # # Анализ результатов
+    # max_count = np.max(counts_3_5)
+    # top_regions = np.where(counts_3_5 == max_count)[0]
 
-    print(f"Третий стимул чаще всего был максимальным в регионах: {top_regions}")
-    print(f"Максимальное количество раз: {max_count}")
+    # print(f"Третий стимул чаще всего был максимальным в регионах: {top_regions}")
+    # print(f"Максимальное количество раз: {max_count}")
 
-    # Визуализация (опционально)
-    plt.figure(figsize=(12, 6))
-    plt.bar(range(132), counts_3_5)
-    plt.xlabel("Регион")
-    plt.ylabel("Количество прогонов с рангом 5")
-    plt.title("Частота максимального ранга для стимула 3")
-    plt.show()
+    # # Визуализация (опционально)
+    # plt.figure(figsize=(12, 6))
+    # plt.bar(range(132), counts_3_5)
+    # plt.xlabel("Регион")
+    # plt.ylabel("Количество прогонов с рангом 5")
+    # plt.title("Частота максимального ранга для стимула 3")
+    # plt.show()
 
 
 def normalize_proportional(data):
@@ -140,8 +142,7 @@ def process_runs_and_save_matrix(config_path, matrix_path, processing_func=calc_
     np.save(matrix_path, matrix)
 
 
-
-def process_runs_into_params_and_save_matrix(config_path, matrix_path, processing_func=calc_auc):
+def process_runs_comparison_and_save_matrix(config_path, matrix_path, processing_func=calc_auc, normalize_func=normalize):
     subjects = process_config(config_path)
 
     # Создаем загрузчик данных
@@ -170,11 +171,63 @@ def process_runs_into_params_and_save_matrix(config_path, matrix_path, processin
         sub.set_tr(subject['tr'])
 
         runs = sub.cut_for_runs(window_size=10)
-        print(np.array(runs).shape)
-        stimulus_data = np.mean(runs, axis=0)
-        print(stimulus_data.shape)
+        ranks_list = list()
+        for run in runs:
+            processed_data = sub.apply_func(run, processing_func)
+            ranks = normalize_func(processed_data)
+            ranks_list.append(ranks)
+        
+        stats_matrix = None
+        for i in range(len(ranks_list)):
+            stimulus_stats = get_stats(ranks_list, i)
+            if stats_matrix is None:
+                stats_matrix = stimulus_stats
+            else:
+                stats_matrix = np.concatenate((stats_matrix, stimulus_stats), axis=0)
+        if matrix is None:
+            matrix = stats_matrix
+        else:
+            matrix = np.concatenate((matrix, stats_matrix), axis=0)
+    os.makedirs(os.path.dirname(matrix_path), exist_ok=True)
+    np.save(matrix_path, matrix)
 
+
+
+def process_runs_into_params_and_save_matrix(config_path, matrix_path, processing_func=calc_auc):
+    subjects = process_config(config_path)
+
+    # Создаем загрузчик данных
+    data_loader = DataLoader(atlas_path)
+
+    matrix = None
+
+    # Интерируемся по объектам в конфиге
+    for subject in subjects:        
+        # Проверяем есть ли путь к сохраненной numpy матрице
+        if 'numpy_path' in subject:
+            numpy_path = subject['numpy_path']
+        else:
+            numpy_path = None
+
+        # Получаем и обрабатываем данные
+        data = data_loader.load_data(subject['data_path'], numpy_path)
+        print(data.shape)
+        events = data_loader.load_events(subject['events_path'])
+        if data is None or events is None:
+            continue
+
+        # Формируем объект хранящий данные
+        sub = SubjectData()
+        sub.set_data(data)
+        sub.set_events(events)
+        sub.set_tr(subject['tr'])
+
+        runs = sub.cut_for_runs(window_size=10)
+        stimulus_data = np.mean(runs, axis=0)
+        
         processed_stimulus_data = sub.apply_func(stimulus_data, processing_func)
+
+        draw_heat_map(processed_stimulus_data)
 
         if matrix is None:
             matrix = processed_stimulus_data
@@ -277,8 +330,24 @@ def build_ranks_matrixes_for_all(save_dir, normalize_func=normalize):
 
         for name, func in funcs.items():
             matrix_path = os.path.join(os.path.join(save_dir, data_option_path), name)
-            process_runs_and_save_matrix(config_path, matrix_path, func, normalize_func)
-            # process_runs_into_params_and_save_matrix(config_path, matrix_path, func)
+            # process_runs_and_save_matrix(config_path, matrix_path, func, normalize_func)
+            # process_runs_comparison_and_save_matrix(config_path, matrix_path, func, normalize_func)
+            process_runs_into_params_and_save_matrix(config_path, matrix_path, func)
+
+def build_for_one(save_dir, normalize_func=normalize):
+    config_card_hc = '/home/aaanpilov/diploma/project/configs/card_hc.yaml'
+    data_option_path = 'card_hc'
+
+    # config_schz = '/home/aaanpilov/diploma/project/configs/schz.yaml'
+    # data_option_path = 'schz'
+
+    config_path = config_card_hc
+    
+    for name, func in funcs.items():
+        matrix_path = os.path.join(os.path.join(save_dir, data_option_path), name)
+        process_runs_and_save_matrix(config_path, matrix_path, func, normalize_func)
+        # process_runs_comparison_and_save_matrix(config_path, matrix_path, func, normalize_func)
+        # process_runs_into_params_and_save_matrix(config_path, matrix_path, func)
 
 
 if __name__ == '__main__':
@@ -294,10 +363,16 @@ if __name__ == '__main__':
     # save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix/reduced_ranks'  
     # build_ranks_matrixes_for_all(save_dir, normalize_reduced)
 
-    draw_heat_map(np.load('/home/aaanpilov/diploma/project/numpy_matrixes/average_matrix/test/auc.npy'))
+    # draw_heat_map(np.load('/home/aaanpilov/diploma/project/numpy_matrixes/average_matrix/test/auc.npy'))
 
-    save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/average_matrix/propose/'  
-    for name, func in funcs.items():
-        matrix_path = os.path.join(os.path.join(save_dir, 'test'), name)
-        process_runs_into_average_matrix('/home/aaanpilov/diploma/project/configs/test_data.yaml', matrix_path, func)
-        break
+    # save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/average_matrix/propose'  
+    # for name, func in funcs.items():
+    #     matrix_path = os.path.join(os.path.join(save_dir, 'test'), name)
+    #     process_runs_into_average_matrix('/home/aaanpilov/diploma/project/configs/test_data.yaml', matrix_path, func)
+
+
+    # save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix/prizes'  
+    # build_ranks_matrixes_for_all(save_dir, normalize)
+
+    save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix' 
+    build_for_one(save_dir)

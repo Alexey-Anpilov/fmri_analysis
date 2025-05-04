@@ -66,15 +66,15 @@ class DataLoader:
     def process_events(self, file_name):
         with open('./tmp.csv', 'w') as output_file,\
             open(file_name, 'r') as input_file:
-                output_file.write('onset,duration,trial_type,name\n')
+                output_file.write('onset,duration,trial_type,name,stimulus_number\n')
                 for line in input_file:
                     l = line.split()
                     if len(l) == 3:
                         continue
                     if l[3][2] == '4':
-                        output_file.write(l[1] + ',1.0,'  +  '1,' + l[4] + '\n')
+                        output_file.write(l[1] + ',1.0,'  +  '1,' + l[4] + ',' + l[3][2] + '\n')
                     else:
-                        output_file.write(l[1] + ',1.0,' + '0,' + l[4] + '\n')
+                        output_file.write(l[1] + ',1.0,' + '0,' + l[4] + ','+ l[3][2] + '\n')
         events_data = pd.read_csv('./tmp.csv')
 
         return events_data

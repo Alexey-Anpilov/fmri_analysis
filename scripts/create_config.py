@@ -13,10 +13,10 @@ from fmri_processing import subjects_info
 
 
 # Путь к директории с данными
-base_dir = "/home/aaanpilov/diploma/project/data/test_data"
-output_config = "/home/aaanpilov/diploma/project/configs/raw_test_data.yaml"  # Имя выходного файла
-data_file_name = 'denoised_data.nii.gz'
-numpy_data_dir = '/home/aaanpilov/diploma/project/numpy_data/raw_test_data'
+base_dir = "/home/aaanpilov/diploma/project/data/SCHZ"
+output_config = "/home/aaanpilov/diploma/project/configs/schz.yaml"  # Имя выходного файла
+data_file_name = 'sdenoised_data.nii.gz'
+numpy_data_dir = '/home/aaanpilov/diploma/project/numpy_data/schz'
 sub_info = subjects_info.sub_info_hc
 
 
@@ -24,8 +24,10 @@ sub_info = subjects_info.sub_info_hc
 
 subjects = []
 
+dir_names = sorted([d for d in os.listdir(base_dir) 
+                       if os.path.isdir(os.path.join(base_dir, d))])
 # Проходим по всем поддиректориям в test_data
-for dir_name in os.listdir(base_dir):
+for dir_name in dir_names:
     dir_path = os.path.join(base_dir, dir_name)
     
     # Пропускаем файлы (если есть), работаем только с папками
@@ -34,7 +36,7 @@ for dir_name in os.listdir(base_dir):
     
     # Ищем .txt файл в папке (берём первый найденный)
     txt_files = [f for f in os.listdir(dir_path) if f.endswith('.txt')]
-    print('\n' in txt_files[0])
+
     if not txt_files:
         print(f"Внимание: в папке {dir_name} нет .txt файла!")
         continue
