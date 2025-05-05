@@ -94,10 +94,7 @@ class SubjectData:
     def cut_for_runs(self, window_size, average=False):
         n_chunks = len(self.events) // 6  # количество полных частей по 6
         runs = np.array_split(self.events.iloc[:n_chunks*6], n_chunks)  # делим только строки, кратные 6
-        for run in runs:
-            print(run)
         unique_names_list = self.events['stimulus_number'].unique().tolist()
-        print(unique_names_list)
 
         def extract_windows(onsets):
             window_volumes = int(np.round(window_size / self.tr))

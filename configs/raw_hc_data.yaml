@@ -1,0 +1,86 @@
+subjects:
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1136_DOROSHENKO_N_I__1136/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1136_DOROSHENKO_N_I__1136/Дорошенко
+    имя.txt
+  tr: 1.0
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1136_DOROSHENKO_N_I__1136.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1146_KRYLOV_V_O__1146/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1146_KRYLOV_V_O__1146/Крылов
+    имя.txt
+  tr: 1.0
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1146_KRYLOV_V_O__1146.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1152_BAKAEV_A_T__1152/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1152_BAKAEV_A_T__1152/Бакаев
+    имя.txt
+  tr: 1.0
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1152_BAKAEV_A_T__1152.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1153_ZYZYKIN_A_P__1153/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1153_ZYZYKIN_A_P__1153/ЗызыкинА
+    имя.txt
+  tr: 1.0
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1153_ZYZYKIN_A_P__1153.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1168_NESTER_A_O__1168/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1168_NESTER_A_O__1168/Нестер
+    имя.txt
+  tr: 1.0
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1168_NESTER_A_O__1168.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1186_MAGOMEDOV_A_A__1186/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1186_MAGOMEDOV_A_A__1186/Магомедов
+    имя нет.txt
+  tr: 1.0
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1186_MAGOMEDOV_A_A__1186.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1329_Lisitsin_I_S/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1329_Lisitsin_I_S/1329
+    Лисицин имя нет + счёт.txt
+  tr: 1.11
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1329_Lisitsin_I_S.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1339_Berdikov_P_G/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1339_Berdikov_P_G/1339
+    Бердиков имя + счёт.txt
+  tr: 1.11
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1339_Berdikov_P_G.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1342_Mozgovoi_V_V/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1342_Mozgovoi_V_V/1342
+    Мозговой имя нет + счёт.txt
+  tr: 1.11
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1342_Mozgovoi_V_V.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1350_Matveev_M_I/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1350_Matveev_M_I/1350
+    Матвеев имя нет+ счёт.txt
+  tr: 1.11
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1350_Matveev_M_I.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1351_Kruglov_V_A/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1351_Kruglov_V_A/1351
+    Круглов имя нет + счёт.txt
+  tr: 1.11
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1351_Kruglov_V_A.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1352_Zemkin_V_A/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1352_Zemkin_V_A/1352 Земкин
+    имя нет + счёт.txt
+  tr: 1.11
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1352_Zemkin_V_A.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1357_Kozhanov_K_D/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1357_Kozhanov_K_D/1357
+    Кожанов имя нет + счёт.txt
+  tr: 1.11
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1357_Kozhanov_K_D.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1364_Nabiev_T_R/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1364_Nabiev_T_R/1364 Набиев
+    имя нет + счёт.txt
+  tr: 1.11
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1364_Nabiev_T_R.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1365_Dolgikh_S_V/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1365_Dolgikh_S_V/1365
+    Долгих имя нет + счёт.txt
+  tr: 1.11
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1365_Dolgikh_S_V.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1366_Dyatlov_G_I/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1366_Dyatlov_G_I/1366
+    Дятлов имя нет + счёт.txt
+  tr: 1.11
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1366_Dyatlov_G_I.npy
+- data_path: /home/aaanpilov/diploma/project/data/hc_data/1373_Russak_D_A/sdenoised_data.nii.gz
+  events_path: /home/aaanpilov/diploma/project/data/hc_data/1373_Russak_D_A/1373 Руссак
+    имя нет + счёт.txt
+  tr: 1.11
+  numpy_path: /home/aaanpilov/diploma/project/numpy_data/raw_hc_data/1373_Russak_D_A.npy
