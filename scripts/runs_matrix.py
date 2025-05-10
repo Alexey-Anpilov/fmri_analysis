@@ -127,7 +127,7 @@ def process_runs_and_save_matrix(config_path, matrix_path, processing_func=calc_
     subjects = process_config(config_path)
 
     # Создаем загрузчик данных
-    data_loader = DataLoader(atlas_path)
+    data_loader = DataLoader()
 
     matrix = None
 
@@ -136,11 +136,9 @@ def process_runs_and_save_matrix(config_path, matrix_path, processing_func=calc_
         # Проверяем есть ли путь к сохраненной numpy матрице
         if 'numpy_path' in subject:
             numpy_path = subject['numpy_path']
-        else:
-            numpy_path = None
+            data = data_loader.load_from_npy(numpy_path)
 
         # Получаем и обрабатываем данные
-        data = data_loader.load_data(subject['data_path'], numpy_path)
         events = data_loader.load_events(subject['events_path'])
         if data is None or events is None:
             continue
@@ -172,7 +170,7 @@ def process_runs_comparison_and_save_matrix(config_path, matrix_path, processing
     subjects = process_config(config_path)
 
     # Создаем загрузчик данных
-    data_loader = DataLoader(atlas_path)
+    data_loader = DataLoader()
 
     matrix = None
 
@@ -181,11 +179,8 @@ def process_runs_comparison_and_save_matrix(config_path, matrix_path, processing
         # Проверяем есть ли путь к сохраненной numpy матрице
         if 'numpy_path' in subject:
             numpy_path = subject['numpy_path']
-        else:
-            numpy_path = None
+            data = data_loader.load_from_npy(numpy_path)
 
-        # Получаем и обрабатываем данные
-        data = data_loader.load_data(subject['data_path'], numpy_path)
         events = data_loader.load_events(subject['events_path'])
         if data is None or events is None:
             continue
@@ -223,7 +218,7 @@ def process_stimulus_and_save_matrix(config_path, matrix_path, processing_func=c
     subjects = process_config(config_path)
 
     # Создаем загрузчик данных
-    data_loader = DataLoader(atlas_path)
+    data_loader = DataLoader()
 
     matrix = None
 
@@ -232,12 +227,8 @@ def process_stimulus_and_save_matrix(config_path, matrix_path, processing_func=c
         # Проверяем есть ли путь к сохраненной numpy матрице
         if 'numpy_path' in subject:
             numpy_path = subject['numpy_path']
-        else:
-            numpy_path = None
+            data = data_loader.load_from_npy(numpy_path)
 
-        # Получаем и обрабатываем данные
-        data = data_loader.load_data(subject['data_path'], numpy_path)
-        print(data.shape)
         events = data_loader.load_events(subject['events_path'])
         if data is None or events is None:
             continue
@@ -257,7 +248,6 @@ def process_stimulus_and_save_matrix(config_path, matrix_path, processing_func=c
             matrix = processed_stimulus_data
         else:
             matrix = np.concatenate((matrix, processed_stimulus_data), axis=0)
-    print(matrix.shape)
     os.makedirs(os.path.dirname(matrix_path), exist_ok=True)
     np.save(matrix_path, matrix)    
 
@@ -266,7 +256,7 @@ def process_runs_into_average_matrix(config_path, matrix_path, processing_func=c
     subjects = process_config(config_path)
 
     # Создаем загрузчик данных
-    data_loader = DataLoader(atlas_path)
+    data_loader = DataLoader()
 
     matrix = None
 
@@ -280,11 +270,8 @@ def process_runs_into_average_matrix(config_path, matrix_path, processing_func=c
         # Проверяем есть ли путь к сохраненной numpy матрице
         if 'numpy_path' in subject:
             numpy_path = subject['numpy_path']
-        else:
-            numpy_path = None
-
-        # Получаем и обрабатываем данные
-        data = data_loader.load_data(subject['data_path'], numpy_path)
+            data = data_loader.load_from_npy(numpy_path)
+            
         events = data_loader.load_events(subject['events_path'])
         if data is None or events is None:
             continue
@@ -316,7 +303,7 @@ def process_runs_into_average_matrix(config_path, matrix_path, processing_func=c
 
     for k in range(len(matrix_list_truth)):
         matrix = np.concatenate((matrix_list_truth[k], matrix_list_lie[k]))
-        print(matrix.shape)
+
         if k == 3:
             draw_heat_map(matrix)
         os.makedirs(os.path.dirname(matrix_path), exist_ok=True)
@@ -360,14 +347,14 @@ def build_for_one(save_dir, normalize_func=normalize):
 if __name__ == '__main__':
     #--------------------------------------------------------------------------------------------------------------------
     # ВСЕ ДЛЯ РАНГОВ
-    # save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix'  
-    # build_ranks_matrixes(save_dir)
+    save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix'  
+    build_ranks_matrixes(save_dir)
 
-    # save_dir_proportional_ranks = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix/proportional'
-    # build_ranks_matrixes(save_dir_proportional_ranks, normalize_proportional)
+    save_dir_proportional_ranks = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix/proportional'
+    build_ranks_matrixes(save_dir_proportional_ranks, normalize_proportional)
 
-    # save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix/reduced_ranks'  
-    # build_ranks_matrixes(save_dir, normalize_reduced)
+    save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix/reduced_ranks'  
+    build_ranks_matrixes(save_dir, normalize_reduced)
 
     #--------------------------------------------------------------------------------------------------------------------
     # УСРЕДНЕННЫЙ СТИМУЛ

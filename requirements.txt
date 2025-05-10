@@ -4,3 +4,4 @@ nilearn
 pyyaml
 seaborn
 matplotlib
+Path

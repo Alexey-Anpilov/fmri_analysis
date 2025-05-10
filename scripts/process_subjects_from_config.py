@@ -20,7 +20,7 @@ if __name__ == '__main__':
         model = pickle.load(f)
 
     # Создаем загрузчик данных
-    data_loader = DataLoader(atlas_path)
+    data_loader = DataLoader()
 
     need_average = True
 
@@ -30,11 +30,16 @@ if __name__ == '__main__':
             # Проверяем есть ли путь к сохраненной numpy матрице
             if 'numpy_path' in subject:
                 numpy_path = subject['numpy_path']
+                data = data_loader.load_from_npy(numpy_path)
             else:
-                numpy_path = None
+                data = data_loader.load_from_nii_and_save(
+                    data_path=subject['data_path'], 
+                    npy_path=subject['numpy_path'],
+                    tr=subject['tr'],
+                    atlas_path=atlas_path,
+                    standardize=True)  # TODO: вот тут разобраться с параметром надо
 
             # Получаем и обрабатываем данные
-            data = data_loader.load_data(subject['data_path'], numpy_path)
             events = data_loader.load_events(subject['events_path'])
             if data is None or events is None:
                 continue
@@ -46,7 +51,7 @@ if __name__ == '__main__':
             sub.set_tr(subject['tr'])
             
             # Обрезаем и преобразуем данные
-            processed_truth, processed_lie = sub.cut_and_apply_function(window_size=10 , process_func=calc_max_min, need_average=need_average)
+            processed_truth, processed_lie = sub.cut_for_truth_and_lie(window_size=10 , process_func=calc_max_min, need_average=need_average)
 
             if need_average:
                 # Проверяем данные на модели

@@ -25,7 +25,7 @@ config_schz = '/home/aaanpilov/diploma/project/configs/schz_data.yaml'
 config_raw_hc = '/home/aaanpilov/diploma/project/configs/raw_hc_data.yaml'
 config_hc = '/home/aaanpilov/diploma/project/configs/hc_data.yaml'
 
-def load_from_nii_and_save(config_path, standartize=False):
+def load_from_nii_and_save(config_path, standardize=False):
     # Получаем даннные из конфига    
     subjects = process_config(config_path)
 
@@ -34,8 +34,13 @@ def load_from_nii_and_save(config_path, standartize=False):
         # TODO: тут надо, чтобы всегда был путь до numpy, надо добавить какое-нибудь исключение.
         # TODO: можно еще передавать инфу о numpy пути, чтобы конфиги не плодить.
         # Получаем и сохраняем данные
-        data_loader = DataLoader(atlas_path, standartize=standartize, tr=subject['tr'])
-        data_loader.load_from_nii_and_save(subject['data_path'], subject['numpy_path'])
+        data_loader = DataLoader()
+        data_loader.load_from_nii_and_save(
+            data_path=subject['data_path'], 
+            npy_path=subject['numpy_path'],
+            tr=subject['tr'],
+            atlas_path=atlas_path,
+            standardize=standardize)
 
 
 if __name__ == '__main__':
@@ -57,8 +62,8 @@ if __name__ == '__main__':
 
     #Считать сырые данные
     for config in (config_raw_test, config_raw_hc, config_raw_card_hc, config_raw_card_test, config_raw_schz):
-        load_from_nii_and_save(config, standartize=False)
+        load_from_nii_and_save(config, standardize=False)
     
     # Считать данные в z-score
     for config in (config_hc, config_test, config_card_hc, config_schz, config_hc):
-        load_from_nii_and_save(config, standartize=True)
+        load_from_nii_and_save(config, standardize=True)

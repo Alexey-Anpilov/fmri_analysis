@@ -1,40 +1,67 @@
 import numpy as np
+import logging
 
+"""
+Класс для хранения и обработки нейровизуализационных данных испытуемого.
+
+- Хранит данные фМРТ, информацию о событиях и TR
+- Нарезать данные на временные окна с разными условиями
+- Применять аналитические функции к выделенным участкам данных
+- Обрабатывать данные по отдельным прогонам эксперимента
+"""
 class SubjectData:
     def __init__(self, data=None, events=None, tr=1.0):
+        """Инициализация объекта с данными, событиями и параметром TR"""
         self.data = data
         self.events = events
-        self.tr = tr
+        self.tr = tr        
+        self.logger = self._setup_logger()
 
-    # Set data
+
+    def _setup_logger(self):
+        """Создает и настраивает логгер экземпляра класса"""
+        logger = logging.getLogger("SubjectData")
+        if not logger.handlers:
+            logger.setLevel(logging.INFO)
+            handler = logging.StreamHandler()
+            handler.setFormatter(
+                logging.Formatter("[%(asctime)s][%(levelname)s][%(name)s] %(message)s")
+            )
+            logger.addHandler(handler)
+        return logger
+
+
     def set_data(self, data):
         self.data = data
 
-    # Set events
+
     def set_events(self, events):
         self.events = events
 
-    # Set time repetition
+
     def set_tr(self, tr):
         self.tr = tr
 
-    # Get data
+
     def get_data(self):
         return self.data
 
-    # Get events
+
     def get_events(self):
         return self.events
     
-    # Get time repetition
+
     def get_tr(self):
         return self.tr
-    
 
-    def cut_and_apply_function(self, window_size=10, process_func=np.max, need_average=False):
-        '''
-            Для одного испытуемого нарезает данные -- разделяет на правду и ложь и применяет фукнцию
-        '''
+
+    def cut_for_truth_and_lie(self, window_size=10, process_func=np.max, need_average=False):
+        """
+        1. Разделение данных по окнам для правдивых и ложных ответов
+        2. Применение аналитической функции
+
+        need
+        """
         truth_data = self.cut_answers_for_truth(window_size)
         lie_data = self.cut_answers_for_lie(window_size)
 
@@ -43,112 +70,69 @@ class SubjectData:
         
         return truth_data_processed, lie_data_processed
     
-
-    # функция для извлечения окон
-    def extract_windows_(self, onsets, window_size):
+    
+    def extract_windows(self, onsets, window_size):
+        """
+        Вырезает данные по временным меткам
+        
+        Параметры:
+            onsets: массив временных меток начала событий
+            window_size: длительность окна в секундах
+        """
         window_volumes = int(np.round(window_size / self.tr))
         signals = []
+        
         for onset in onsets:
             start = int(np.round(onset / self.tr))
             end = start + window_volumes
+            
             if end > self.data.shape[0]:
-                print(f"Пропущен вопрос (выход за границы данных)")
+                self.logger.warning("Пропущен вопрос (выход за границы данных)")
                 continue
+                
             window_data = self.data[start:end, :]
-            # if average:
-            #     window_data = np.mean(window_data, axis=0)  # Усреднение по времени -> [регионы]
             signals.append(window_data)
+            
         return np.array(signals)
 
-    
+
     def cut_answers_for_truth(self, window_size):
         truth_onsets = self.events[self.events['trial_type'] == 0]['onset'].values
-        return self.cut_answers(truth_onsets, window_size)
+        return self.extract_windows(truth_onsets, window_size)
 
 
     def cut_answers_for_lie(self, window_size):
         lie_onsets = self.events[self.events['trial_type'] == 1]['onset'].values
-        return self.cut_answers(lie_onsets, window_size)
+        return self.extract_windows(lie_onsets, window_size)
 
-
-    def cut_answers(self, onsets, window_size, average=False):
-        '''
-            Вырезает из данных участки с импульсами согласно файлу разбиения
-        '''
-        # # Получаем truth_onsets (onset для trial_type == 0)
-        # truth_onsets = [
-        #     events['onset'][i]  # Берем onset
-        #     for i in range(len(events['trial_type']))  # Итерируем по индексам
-        #     if events['trial_type'][i] == 0  # Условие: trial_type == 0
-        # ]
-
-        # # Получаем lie_onsets (onset для trial_type == 1)
-        # lie_onsets = [
-        #     events['onset'][i]  # Берем onset
-        #     for i in range(len(events['trial_type']))  # Итерируем по индексам
-        #     if events['trial_type'][i] == 1  # Условие: trial_type == 1
-        # ]
-        return self.extract_windows_(onsets, window_size)
-    
 
     def cut_for_runs(self, window_size, average=False):
-        n_chunks = len(self.events) // 6  # количество полных частей по 6
-        runs = np.array_split(self.events.iloc[:n_chunks*6], n_chunks)  # делим только строки, кратные 6
-        unique_names_list = self.events['stimulus_number'].unique().tolist()
-
-        def extract_windows(onsets):
-            window_volumes = int(np.round(window_size / self.tr))
-            signals = []
-            for onset in onsets:
-                start = int(np.round(onset / self.tr))
-                end = start + window_volumes
-                if end > self.data.shape[0]:
-                    print(f"Пропущен вопрос (выход за границы данных)")
-                    continue
-                window_data = self.data[start:end, :]
-                if average:
-                    window_data = np.mean(window_data, axis=0)  # Усреднение по времени -> [регионы]
-                signals.append(window_data)
-            return np.array(signals)
-
-        # res = list()
-        # for run_ in runs:
-        #     run = run_[1:]  # Пропускаем первую строку
-            
-        #     # Сортируем по stimulus_number вместо name
-        #     sorted_onset_values = run['onset'].iloc[
-        #         run['stimulus_number'].argsort()  # Сортировка по stimulus_number
-        #     ].values
-            
-        #     res.append(extract_windows(sorted_onset_values))
+        """
+        Обработка данных по отдельным прогонам эксперимента.
         
-        # return res
+        Разбивает данные на сегменты по 6 событий, сортирует события внутри
+        прогона по номеру стимула и извлекает соответствующие временные окна.
+        """
+        n_chunks = len(self.events) // 6
+        runs = np.array_split(self.events.iloc[:n_chunks*6], n_chunks)
+        unique_names_list = self.events['stimulus_number'].unique().tolist()
+        res = []
 
-        res = list()
         for run_ in runs:
-            run = run_[1:]
+            run = run_[1:]  # Пропуск первого события
+            
+            # Сортировка событий по порядку стимулов
             sorted_onset_values = run['onset'].iloc[
-    run['stimulus_number'].apply(lambda x: unique_names_list.index(x)).argsort()].values
-            res.append(extract_windows(sorted_onset_values))
-    #     # res = dict()
-    #     # for name in unique_names_list:
-    #     #     onsets = self.events[self.events['name'] == name]['onset'].values
-    #     #     # print(name)
-    #     #     # print(onsets)
-    #     #     res[name] = extract_windows(onsets)
+                run['stimulus_number'].apply(lambda x: unique_names_list.index(x)).argsort()
+            ].values
+            
+            res.append(self.extract_windows(sorted_onset_values, window_size, average))
+            
         return res
 
-    # TODO тут нужно принимать просто данные, а не truth и lie 
     def apply_func(self, data, process_func, need_average=False):
         """
-        Обрабатывает данные одного испытуемого: применяет функцию 
-        для правды и лжи в каждом регионе.
-        
-        need_average -- усредняя по всем вопросам правды и лжи 
+        Применяет функции к вырезанным участкам.
         """
-        processed_data = process_func(data)    # (25, 132)
-
-        if need_average:
-            processed_data = np.mean(processed_data, axis=0)  # (132,)
-
-        return processed_data
+        processed_data = process_func(data)
+        return np.mean(processed_data, axis=0) if need_average else processed_data
