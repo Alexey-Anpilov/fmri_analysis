@@ -23,21 +23,6 @@ class DataOption(Enum):
     CARD_HC = auto()
     CARD_TEST = auto()
 
-# config_raw_test = '/home/aaanpilov/diploma/project/configs/raw_test_data.yaml'
-# config_test = '/home/aaanpilov/diploma/project/configs/test_data.yaml'
-
-# config_raw_card_hc = '/home/aaanpilov/diploma/project/configs/raw_card_hc_data.yaml'
-# config_card_hc = '/home/aaanpilov/diploma/project/configs/card_hc_data.yaml'
-
-# config_raw_card_test = '/home/aaanpilov/diploma/project/configs/raw_card_test_data.yaml'
-# config_card_test = '/home/aaanpilov/diploma/project/configs/card_test.yaml'
-
-# config_raw_schz = '/home/aaanpilov/diploma/project/configs/raw_schz_data.yaml'
-# config_schz = '/home/aaanpilov/diploma/project/configs/schz_data.yaml'
-
-# config_raw_hc = '/home/aaanpilov/diploma/project/configs/raw_hc_data.yaml'
-# config_hc = '/home/aaanpilov/diploma/project/configs/hc_data.yaml'
-
 
 configs = {
     DataOption.RAW_HC : '/home/aaanpilov/diploma/project/configs/raw_hc_data.yaml',
@@ -53,7 +38,7 @@ configs = {
 }
 
 
-
+# Для чемпиона 
 def get_stats(ranks_list, stimulus_index=3):
     # Инициализация
     counts_3_5 = np.zeros(132, dtype=int)  # Счётчик для 132 регионов
@@ -65,7 +50,7 @@ def get_stats(ranks_list, stimulus_index=3):
 
     return counts_3_5.reshape(1, -1)
 
-
+# Пропорциональные баллы
 def normalize_proportional(data):
     # Копируем данные, чтобы не изменять исходный массив
     data = np.array(data, dtype=float)
@@ -91,7 +76,7 @@ def normalize_proportional(data):
     
     return ranks
 
-
+# Баллы
 def normalize(data):
 # Ваш массив (5 стимулов × 132 региона)
 
@@ -105,7 +90,7 @@ def normalize(data):
         ranks[sorted_indices, region] = np.arange(1, 6)  # 1..6
     return ranks
 
-
+# Баллы 1-2
 def normalize_reduced(data):
     # Создаем массив нулей того же размера, что и входные данные
     ranks = np.zeros_like(data, dtype=int)
@@ -121,6 +106,7 @@ def normalize_reduced(data):
         ranks[sorted_indices[-1], region] = 2
     
     return ranks
+
 
 # Расстановка баллов
 def process_runs_and_save_matrix(config_path, matrix_path, processing_func=calc_auc, normalize_func=normalize):
@@ -251,7 +237,50 @@ def process_stimulus_and_save_matrix(config_path, matrix_path, processing_func=c
     os.makedirs(os.path.dirname(matrix_path), exist_ok=True)
     np.save(matrix_path, matrix)    
 
-# Усредненные стимулы
+
+# Обрабатываем стимулы отдельно
+def process_stimulus_with_different_trials_and_save_matrix(config_path, matrix_path, processing_func=calc_auc, normalize_func=normalize):
+    subjects = process_config(config_path)
+
+    # Создаем загрузчик данных
+    data_loader = DataLoader()
+
+    matrix = None
+
+    # Интерируемся по объектам в конфиге
+    for subject in subjects:        
+        # Проверяем есть ли путь к сохраненной numpy матрице
+        if 'numpy_path' in subject:
+            numpy_path = subject['numpy_path']
+            data = data_loader.load_from_npy(numpy_path)
+
+        events = data_loader.load_events_for_different_trials(subject['events_path'])
+
+        if data is None or events is None:
+            continue
+        
+        for events_pack in events:
+            # Формируем объект хранящий данные
+            sub = SubjectData()
+            sub.set_data(data)
+            sub.set_events(events_pack)
+            sub.set_tr(subject['tr'])
+
+            runs = sub.cut_for_runs(window_size=10)
+            stimulus_data = np.mean(runs, axis=0)
+            
+            processed_stimulus_data = sub.apply_func(stimulus_data, processing_func)
+
+            if matrix is None:
+                matrix = processed_stimulus_data
+            else:
+                matrix = np.concatenate((matrix, processed_stimulus_data), axis=0)
+    os.makedirs(os.path.dirname(matrix_path), exist_ok=True)
+    np.save(matrix_path, matrix)    
+    print(matrix.shape)
+
+
+# Усредняем правдивые и ложные ответы отдельно
 def process_runs_into_average_matrix(config_path, matrix_path, processing_func=calc_auc, normalize_func=normalize):
     subjects = process_config(config_path)
 
@@ -310,15 +339,14 @@ def process_runs_into_average_matrix(config_path, matrix_path, processing_func=c
         np.save(matrix_path + str(k), matrix)
 
 
+
 def build_matrixes_for_all(save_dir, processing_func ,normalize_func=normalize):
     for option, config in configs.items():
         for name, func in funcs.items():
             data_option_path = Path(config).stem
             matrix_path = os.path.join(os.path.join(save_dir, data_option_path), name)
             processing_func(config, matrix_path, func, normalize_func)
-            # process_runs_and_save_matrix(config, matrix_path, func, normalize_func)
-            # process_runs_comparison_and_save_matrix(config, matrix_path, func, normalize_func)
-            # process_stimulus_and_save_matrix(config, matrix_path, func)
+
 
 def build_ranks_matrixes(save_dir,normalize_func=normalize):
     build_matrixes_for_all(save_dir, process_runs_and_save_matrix, normalize_func)
@@ -326,22 +354,6 @@ def build_ranks_matrixes(save_dir,normalize_func=normalize):
 
 def build_stimulus_matrixes(save_dir):
     build_matrixes_for_all(save_dir, process_stimulus_and_save_matrix)
-
-
-def build_for_one(save_dir, normalize_func=normalize):
-    config_card_hc = '/home/aaanpilov/diploma/project/configs/card_hc.yaml'
-    data_option_path = 'card_hc'
-
-    # config_schz = '/home/aaanpilov/diploma/project/configs/schz.yaml'
-    # data_option_path = 'schz'
-
-    config_path = config_card_hc
-    
-    for name, func in funcs.items():
-        matrix_path = os.path.join(os.path.join(save_dir, data_option_path), name)
-        process_runs_and_save_matrix(config_path, matrix_path, func, normalize_func)
-        # process_runs_comparison_and_save_matrix(config_path, matrix_path, func, normalize_func)
-        # process_runs_into_params_and_save_matrix(config_path, matrix_path, func)
 
 
 if __name__ == '__main__':
@@ -361,6 +373,12 @@ if __name__ == '__main__':
     save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/average_stimulus'  
     build_stimulus_matrixes(save_dir)
 
+    # save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/average_stimulus'  
+    # config = configs[DataOption.CARD_HC]
+    # for name, func in funcs.items():
+    #     data_option_path = Path(config).stem
+    #     matrix_path = os.path.join(os.path.join(save_dir, data_option_path), name)
+    #     process_stimulus_with_different_trials_and_save_matrix(config, matrix_path, func, normalize)
 
 
     #--------------------------------------------------------------------------------------------------------------------
@@ -375,3 +393,31 @@ if __name__ == '__main__':
     # save_dir = '/home/aaanpilov/diploma/project/numpy_matrixes/ranks_matrix/prizes'  
     # build_ranks_matrixes_for_all(save_dir, normalize)
     #--------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # def build_for_one(save_dir, normalize_func=normalize):
+    # config_card_hc = '/home/aaanpilov/diploma/project/configs/card_hc.yaml'
+    # data_option_path = 'card_hc'
+
+    # # config_schz = '/home/aaanpilov/diploma/project/configs/schz.yaml'
+    # # data_option_path = 'schz'
+
+    # config_path = config_card_hc
+    
+    # for name, func in funcs.items():
+    #     matrix_path = os.path.join(os.path.join(save_dir, data_option_path), name)
+    #     process_runs_and_save_matrix(config_path, matrix_path, func, normalize_func)
+    #     # process_runs_comparison_and_save_matrix(config_path, matrix_path, func, normalize_func)
+    #     # process_runs_into_params_and_save_matrix(config_path, matrix_path, func)

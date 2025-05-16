@@ -128,6 +128,84 @@ class DataLoader:
         return self._process_events_file(events_path)
 
 
+    def load_events_for_different_trials(self, events_path):
+        """
+        Парсинг файла событий с группировкой по уникальным наборам вопросов.
+
+        Логика обработки:
+        - Вопросы группируются по уникальным наборам из 6 вопросов (порядок не важен).
+        - Каждая группа возвращается как отдельный DataFrame.
+        """
+        self.logger.info(f'Parsing time-file: {events_path}')
+        events_path = Path(events_path)
+
+        # Словарь для группировки по stimulus_group (первая часть stimulus_code)
+        stimulus_groups = {}
+        # Словарь для связи наборов вопросов с записями
+        question_groups = {}
+
+        try:
+            with events_path.open('r') as f:
+                for line_num, line in enumerate(f, 1):
+                    parts = line.strip().split('\t')  # Разделение по табуляции
+                    if len(parts) < 4:
+                        continue  # Пропуск неполных строк
+
+                    stimulus_with_question = parts[3].strip()
+                    if not stimulus_with_question:
+                        continue  # Пропуск строк без вопроса
+
+                    # Разделение stimulus_code и вопроса
+                    if ' ' not in stimulus_with_question:
+                        continue  # Неверный формат
+                    
+                    stimulus_code, question = stimulus_with_question.split(' ', 1)
+                    stimulus_group = stimulus_code.split('.')[0]
+
+                    # Сохраняем вопрос в соответствующей группе
+                    if stimulus_group not in stimulus_groups:
+                        stimulus_groups[stimulus_group] = {
+                            'questions': set(),
+                            'records': []
+                        }
+
+                    # Определение параметров
+                    try:
+                        # stimulus_type - третий символ stimulus_code (если есть)
+                        stimulus_type = stimulus_code[2] if len(stimulus_code) >= 3 else '0'
+                        trial_type = 1 if stimulus_type == '4' else 0
+
+                        stimulus_groups[stimulus_group]['questions'].add(question)
+                        stimulus_groups[stimulus_group]['records'].append({
+                            'onset': float(parts[1]),
+                            'duration': 1.0,
+                            'trial_type': trial_type,
+                            'name': question,
+                            'stimulus_number': stimulus_type
+                        })
+                    except Exception as e:
+                        self.logger.warning(f"Error processing line {line_num}: {e}")
+
+            # Группировка по уникальным наборам вопросов
+            for group, data in stimulus_groups.items():
+                if len(data['questions']) != 6:
+                    self.logger.warning(f"Группа {group} содержит {len(data['questions'])} вопросов. Требуется 6.")
+                    continue
+
+                # Используем frozenset для игнорирования порядка
+                question_set = frozenset(data['questions'])
+                if question_set not in question_groups:
+                    question_groups[question_set] = []
+                question_groups[question_set].extend(data['records'])
+
+        except Exception as e:
+            self.logger.error(f"Error processing events file: {str(e)}")
+            return None
+
+        # Формируем список DataFrame для каждой уникальной группы вопросов
+        dfs = [pd.DataFrame(records) for records in question_groups.values()]
+        return dfs if dfs else None
+
     def _process_events_file(self, file_path):
         """
         Парсинг файла событий с извлечением ключевых параметров

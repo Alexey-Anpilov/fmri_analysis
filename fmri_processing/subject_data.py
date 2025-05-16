@@ -126,7 +126,7 @@ class SubjectData:
                 run['stimulus_number'].apply(lambda x: unique_names_list.index(x)).argsort()
             ].values
             
-            res.append(self.extract_windows(sorted_onset_values, window_size, average))
+            res.append(self.extract_windows(sorted_onset_values, window_size))
             
         return res
 
