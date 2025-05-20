@@ -71,7 +71,7 @@ class SubjectData:
         return truth_data_processed, lie_data_processed
     
     
-    def extract_windows(self, onsets, window_size):
+    def extract_windows(self, onsets, window_size, tr_shift=False):
         """
         Вырезает данные по временным меткам
         
@@ -84,6 +84,8 @@ class SubjectData:
         
         for onset in onsets:
             start = int(np.round(onset / self.tr))
+            if tr_shift:
+                start -= self.tr
             end = start + window_volumes
             
             if end > self.data.shape[0]:
@@ -96,17 +98,17 @@ class SubjectData:
         return np.array(signals)
 
 
-    def cut_answers_for_truth(self, window_size):
+    def cut_answers_for_truth(self, window_size, tr_shift=False):
         truth_onsets = self.events[self.events['trial_type'] == 0]['onset'].values
-        return self.extract_windows(truth_onsets, window_size)
+        return self.extract_windows(truth_onsets, window_size, tr_shift)
 
 
-    def cut_answers_for_lie(self, window_size):
+    def cut_answers_for_lie(self, window_size, tr_shift=False):
         lie_onsets = self.events[self.events['trial_type'] == 1]['onset'].values
-        return self.extract_windows(lie_onsets, window_size)
+        return self.extract_windows(lie_onsets, window_size, tr_shift)
 
 
-    def cut_for_runs(self, window_size, average=False):
+    def cut_for_runs(self, window_size, average=False, tr_shift=False):
         """
         Обработка данных по отдельным прогонам эксперимента.
         
@@ -126,7 +128,7 @@ class SubjectData:
                 run['stimulus_number'].apply(lambda x: unique_names_list.index(x)).argsort()
             ].values
             
-            res.append(self.extract_windows(sorted_onset_values, window_size))
+            res.append(self.extract_windows(sorted_onset_values, window_size, tr_shift))
             
         return res
 
