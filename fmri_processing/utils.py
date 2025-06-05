@@ -33,8 +33,8 @@ def draw_heat_map(data):
         Создает тепловую карту для данных размера (x, 132)
     '''
     plt.figure(figsize=(10, 6))  # Задаем размер графика
-    sns.heatmap(data, cmap='viridis', cbar_kws={'label': 'Значения'})  # 'viridis' — цветовая карта
-    plt.title('Тепловая карта массива')
-    plt.xlabel('Ось X')
-    plt.ylabel('Ось Y')
+    sns.heatmap(data, cmap='viridis', cbar_kws={'label': 'Сумма баллов'})  # 'viridis' — цветовая карта
+    plt.title('Тепловая карта признаков')
+    plt.xlabel('Регионы')
+    plt.ylabel('Стимулы')
     plt.show()

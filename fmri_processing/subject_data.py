@@ -83,9 +83,7 @@ class SubjectData:
         signals = []
         
         for onset in onsets:
-            start = int(np.round(onset / self.tr))
-            if tr_shift:
-                start -= self.tr
+            start = int(np.round((onset - self.tr)/ self.tr))
             end = start + window_volumes
             
             if end > self.data.shape[0]:
@@ -108,7 +106,7 @@ class SubjectData:
         return self.extract_windows(lie_onsets, window_size, tr_shift)
 
 
-    def cut_for_runs(self, window_size, average=False, tr_shift=False):
+    def cut_for_runs(self, window_size, average=False, tr_shift=True):
         """
         Обработка данных по отдельным прогонам эксперимента.
         
