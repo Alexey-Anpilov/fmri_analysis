@@ -5,7 +5,6 @@ from fmri_processing.subjects_info import *
 from fmri_processing.utils import draw_heat_map
 import numpy as np
 import os
-import matplotlib.pyplot as plt
 from fmri_processing.utils import *
 from pathlib import Path
 
@@ -25,16 +24,16 @@ class DataOption(Enum):
 
 
 configs = {
-    # DataOption.RAW_HC : '/home/aaanpilov/diploma/project/configs/raw_hc_data.yaml',
-    # DataOption.RAW_TEST : '/home/aaanpilov/diploma/project/configs/raw_test_data.yaml',
+    DataOption.RAW_HC : '/home/aaanpilov/diploma/project/configs/raw_hc_data.yaml',
+    DataOption.RAW_TEST : '/home/aaanpilov/diploma/project/configs/raw_test_data.yaml',
     # DataOption.RAW_SCHZ : '/home/aaanpilov/diploma/project/configs/raw_schz_data.yaml',
-    DataOption.RAW_CARD_HC : '/home/aaanpilov/diploma/project/configs/raw_card_hc_data.yaml',
-    DataOption.RAW_CARD_TEST : '/home/aaanpilov/diploma/project/configs/raw_card_test_data.yaml',
+    # DataOption.RAW_CARD_HC : '/home/aaanpilov/diploma/project/configs/raw_card_hc_data.yaml',
+    # DataOption.RAW_CARD_TEST : '/home/aaanpilov/diploma/project/configs/raw_card_test_data.yaml',
     # DataOption.HC : '/home/aaanpilov/diploma/project/configs/hc_data.yaml',
     # DataOption.TEST : '/home/aaanpilov/diploma/project/configs/test_data.yaml',
     # DataOption.SCHZ : '/home/aaanpilov/diploma/project/configs/schz_data.yaml',
-    DataOption.CARD_HC : '/home/aaanpilov/diploma/project/configs/card_hc_data.yaml',
-    DataOption.CARD_TEST : '/home/aaanpilov/diploma/project/configs/card_test_data.yaml',
+    # DataOption.CARD_HC : '/home/aaanpilov/diploma/project/configs/card_hc_data.yaml',
+    # DataOption.CARD_TEST : '/home/aaanpilov/diploma/project/configs/card_test_data.yaml',
 }
 
 

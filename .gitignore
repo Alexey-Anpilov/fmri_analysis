@@ -2,3 +2,6 @@ data/
 __pycache__/
 tmp.csv
 .vscode/
+numpy_data/
+numpy_martixes/
+atlas/
