@@ -94,7 +94,16 @@ if __name__ == "__main__":
                 most_confident_idx = np.argmax(probabilities[subject_indices]) + i
                 final_predictions[most_confident_idx] = 1
             
-            print("Итоговые предсказания:\n", final_predictions.reshape(-1, 5))
+            predictions_matrix = final_predictions.reshape(-1, 5)
+            print("Итоговые предсказания:\n", predictions_matrix)
+
+            results_path = config['results_path']
+            with open(results_path, 'w') as f:
+                for idx, subject in enumerate(test_subs):
+                    data_file = subject.get('numpy_path') or subject.get('data_path')
+                    preds = predictions_matrix[idx]
+                    f.write(f"{data_file}\n")
+                    f.write(' '.join(map(str, preds.astype(int))) + "\n")
 
     except SystemExit:
         sys.exit(1)
