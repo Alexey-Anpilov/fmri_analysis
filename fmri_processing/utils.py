@@ -64,8 +64,15 @@ def load_and_validate_config(config_path: str) -> dict:
         config = safe_load(f)
     
     # Проверка обязательных глобальных полей
-    required_global = ['atlas_path', 'train_model', 'model_path', 
-                      'save_to_numpy', 'features_type', 'func']
+    required_global = [
+        'atlas_path',
+        'train_model',
+        'model_path',
+        'save_to_numpy',
+        'features_type',
+        'func',
+        'results_path',
+    ]
     for key in required_global:
         if key not in config:
             raise KeyError(f"Отсутствует обязательное поле: {key}")
@@ -89,6 +96,11 @@ def load_and_validate_config(config_path: str) -> dict:
         raise ValueError(
             f"Недопустимое значение features_type: {config['features_type']}. "
             f"Допустимые значения: {valid_features}"
+        )
+
+    if not config['results_path']:
+        raise ValueError(
+            "Путь к файлу с результатами (results_path) не может быть пустым"
         )
     
     # Проверка пути к модели

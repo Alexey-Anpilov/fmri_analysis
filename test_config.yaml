@@ -4,6 +4,7 @@ model_path: "./models/test_model"
 save_to_numpy: false
 func: "max"
 features_type: "ranks_five"
+results_path: "./results.txt"
 training_dataset:
 - data_path: /home/aaanpilov/diploma/project/data/test_data/1374_Stolbov_A_P/sdenoised_data.nii.gz
   events_path: /home/aaanpilov/diploma/project/data/test_data/1374_Stolbov_A_P/1374

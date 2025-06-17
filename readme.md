@@ -11,6 +11,7 @@
 data_path: './data/HC/sub-02/denoised_data.nii.gz'  # Путь к fMRI данным в формате .nii.gz
 events_path: './data/HC/sub-02/sub-02_timing.txt'   # Путь к файлу с временным разбиением
 tr: 1.0
+results_path: './results.txt'
 ```
 Файл с временным разбиением должен иметь следующий формат:
 ```
